@@ -18,6 +18,11 @@ Rules, each printed as `path:line:rule:message`:
   fails as stale, so the list shrinks and never grows unrecorded.
 - `readme-facts`: the README's opening line differs from the facts file, or a version badge differs from the
   pinned source the facts file points at.
+- `fact-copy`: a copy of a suite or app fact no longer states it. Every fact of the suite (name, slug, tag prefix)
+  and of each app (name, slug, tag prefix, role) names its copies in the facts file: a file and a pattern that must
+  match there, with `{value}` standing for the fact and `{name}` for the owner's name, or a path that must exist
+  (`{value}` again). So changing a fact in the facts file refuses every copy still stating the old one, until it is
+  updated; a fact that names no copy is `facts-malformed`, so none is left unguarded.
 - `facts-malformed`: the facts file is missing, is not JSON, or lacks something a rule reads.
 - `unreadable`: a file the scan lists cannot be read (a sharing violation, a denied access, a tracked file missing
   from the work tree). A file the gate cannot read is never passed as clean; a binary file (one holding a NUL byte or
@@ -54,6 +59,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 FACTS_PATH = "docs/facts.json"
 GITHUB_FIELDS = ("description", "homepage", "topics")
+SUITE_FIELDS = ("name", "slug", "tag_prefix")
+APP_FIELDS = ("name", "slug", "tag_prefix", "role")
 
 
 class Finding:
@@ -97,6 +104,32 @@ def load_facts(root: Path) -> tuple[dict | None, list[Finding]]:
     for n, app in enumerate(apps):
         for key in ("name", "slug", "tag_prefix", "role"):
             need(app, key, str, f"apps[{n}]")
+    for where, owner, fields in [("suite", suite, SUITE_FIELDS)] + [(f"apps[{n}]", app, APP_FIELDS)
+                                                                     for n, app in enumerate(apps)]:
+        copies = need(owner, "copies", list, where)
+        for c, copy in enumerate(copies):
+            at = f"{where}.copies[{c}]"
+            if not isinstance(copy, dict) or copy.get("field") not in fields:
+                problems.append(f"{at}.field is not one of {', '.join(fields)}")
+                continue
+            if ("exists" in copy) == ("path" in copy or "pattern" in copy):
+                problems.append(f"{at} needs either `exists` or both `path` and `pattern`")
+            elif "exists" in copy:
+                need(copy, "exists", str, at)
+            else:
+                need(copy, "path", str, at)
+                if "{value}" not in str(need(copy, "pattern", str, at)):
+                    problems.append(f"{at}.pattern does not contain {{value}}, so it cannot follow the fact")
+                else:
+                    try:
+                        re.compile(_fill(copy["pattern"], {"value": "x", "name": "x"}))
+                    except re.error as error:
+                        problems.append(f"{at}.pattern is not a regular expression ({error})")
+        named = {copy.get("field") for copy in copies if isinstance(copy, dict)}
+        for field in fields:
+            if field not in named:
+                problems.append(f"{where}.{field} names no copy: a fact with no copy is not guarded (add one to "
+                                f"{where}.copies)")
     repo = need(facts, "repository", dict, "facts")
     for key in ("slug", "description", "homepage"):
         need(repo, key, str, "repository")
@@ -321,6 +354,52 @@ def readme_findings(root: Path, facts: dict) -> list[Finding]:
     return out
 
 
+# ---------------------------------------------------------------- fact-copy
+
+def _fill(template: str, values: dict[str, str]) -> str:
+    """A copy's pattern with `{value}` and `{name}` replaced by the escaped fact and owner name."""
+    out = template
+    for key, value in values.items():
+        out = out.replace("{" + key + "}", re.escape(value))
+    return out
+
+
+def copy_findings(root: Path, facts: dict, files: list[str]) -> list[Finding]:
+    """Every copy of a suite or app fact that no longer states it."""
+    listed = set(files)
+    out: list[Finding] = []
+    texts: dict[str, str | None] = {}
+    owners = [("the suite", facts["suite"], facts["suite"]["name"])] + [
+        (app["name"], app, app["name"]) for app in facts["apps"]]
+    for label, owner, name in owners:
+        for copy in owner["copies"]:
+            field, value = copy["field"], owner[copy["field"]]
+            if "exists" in copy:
+                target = copy["exists"].replace("{value}", value)
+                if target not in listed:
+                    out.append(Finding(target, 0, "fact-copy",
+                                       f"{label}'s {field} is {value!r} in {FACTS_PATH}, and {target} is not in the "
+                                       f"tree; move what follows the {field}, or change the fact back"))
+                continue
+            path = copy["path"]
+            if path not in texts:
+                unreadable: list[Finding] = []
+                texts[path] = _read_or_finding(root / path, path, unreadable) if path in listed else None
+                out += unreadable
+            if texts[path] is None:
+                if path not in listed:
+                    out.append(Finding(path, 0, "fact-copy",
+                                       f"holds a copy of {label}'s {field} by {FACTS_PATH}, and is not in the tree"))
+                continue
+            content = texts[path] or ""
+            if not re.search(_fill(copy["pattern"], {"value": value, "name": name}), content, re.M):
+                out.append(Finding(path, 0, "fact-copy",
+                                   f"no longer states {label}'s {field} as {FACTS_PATH} gives it ({value!r}); update "
+                                   f"it to match `{copy['pattern']}`, or, if the copy moved, update its entry in "
+                                   f"{FACTS_PATH}"))
+    return out
+
+
 # ---------------------------------------------------------------- the GitHub mirror
 
 def run_gh(argv: list[str]) -> tuple[int, str]:
@@ -437,7 +516,7 @@ def tree_findings(root: Path, files_from: str | None) -> list[Finding]:
         return [Finding(".", 0, "facts-malformed",
                         "the files to scan cannot be listed: this is not a Git repository and no --files-from list "
                         "was given, so nothing is scanned as if it were whole")]
-    return retired_findings(root, facts, files) + readme_findings(root, facts)
+    return retired_findings(root, facts, files) + readme_findings(root, facts) + copy_findings(root, facts, files)
 
 
 def report(findings: list[Finding]) -> int:
@@ -462,8 +541,15 @@ def self_test() -> int:
     quote = f"For {old_app}, we need everything"
     base = {
         "schema": 1,
-        "suite": {"name": "Newsuite Graphics Suite", "slug": "newsuite", "tag_prefix": "newsuite-v"},
-        "apps": [{"name": "Newapp", "slug": "newapp", "tag_prefix": "newapp-v", "role": "Vector editor"}],
+        "suite": {"name": "Newsuite Graphics Suite", "slug": "newsuite", "tag_prefix": "newsuite-v", "copies": [
+            {"field": "name", "path": "README.md", "pattern": "^# {value}$"},
+            {"field": "slug", "exists": "icons/{value}.svg"},
+            {"field": "tag_prefix", "path": "release.yml", "pattern": "- '{value}\\*'"}]},
+        "apps": [{"name": "Newapp", "slug": "newapp", "tag_prefix": "newapp-v", "role": "Vector editor", "copies": [
+            {"field": "name", "path": "AGENTS.md", "pattern": "\\| \\*\\*{value}\\*\\* \\|"},
+            {"field": "role", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\| {value}"},
+            {"field": "slug", "exists": "icons/{value}.svg"},
+            {"field": "tag_prefix", "path": "release.yml", "pattern": "- '{value}\\*'"}]}],
         "repository": {"slug": "owner/Newsuite", "description": "Newsuite: creative apps in native code.",
                        "topics": ["graphics", "windows"], "homepage": "https://example.invalid/newsuite/"},
         "readme": {"path": "README.md", "opening_line": "Creative apps on one shared core."},
@@ -488,13 +574,15 @@ def self_test() -> int:
     }
     counted = json.loads(json.dumps(base))
     counted["allow"]["counts"] = [{"path": "docs/notes.md", "word": old_app, "count": 2, "reason": "a dated note"}]
-    readme = ("# Newsuite\n\nCreative apps on one shared core.\n\n"
+    readme = ("# Newsuite Graphics Suite\n\nCreative apps on one shared core.\n\n"
               "[![C++23](https://img.shields.io/badge/C%2B%2B-23-00599C)](x)\n")
+    copies = {"AGENTS.md": "| **Newapp** | Vector editor (an alternative) |\n", "icons/newsuite.svg": "<svg/>\n",
+              "icons/newapp.svg": "<svg/>\n", "release.yml": "tags:\n  - 'newsuite-v*'\n  - 'newapp-v*'\n"}
 
     def tree(tmp: Path, files: "dict[str, str] | dict[str, str | bytes]", facts: dict | str | None = None) -> list[str]:
         """Write a tree and return its file list; `facts` replaces the base facts (a string is written as is)."""
         every = {"README.md": readme, "native/CMakeLists.txt": "set(CMAKE_CXX_STANDARD 23)\n",
-                 "native/toolchain.json": '{"cmake": "4.3.1"}\n', **files}
+                 "native/toolchain.json": '{"cmake": "4.3.1"}\n', **copies, **files}
         if facts is None:
             facts = base
         every[FACTS_PATH] = facts if isinstance(facts, str) else json.dumps(facts, indent=1)
@@ -536,7 +624,7 @@ def self_test() -> int:
     found = run({"docs/CHANGELOG.md": f"Renamed {old_suite}.\n", "docs/legacy.md": f"{old_app}\n"})
     check("paths: an exact file is that file only, and a folder is that folder only", len(found), 2)
     check("quotes: a verbatim sentence is exempt wherever it is quoted",
-          run({"docs/a.md": f'The operator said "{quote}".\n', "AGENTS.md": f"> {quote}\n"}), [])
+          run({"docs/a.md": f'The operator said "{quote}".\n', "docs/b.md": f"> {quote}\n"}), [])
     found = run({"docs/a.md": f'The operator said "{quote}", and {old_app} was renamed.\n'})
     check("quotes: the same word outside the quote still fails", (len(found), has(found, "occurs 1 time(s)")), (1, True))
     check("patterns: a path as an old commit holds it is exempt",
@@ -595,7 +683,8 @@ def self_test() -> int:
               has(found, "README.md:0:unreadable:", "PermissionError", "Access is denied"), True)
     check("a file outside the list is not scanned (an untracked file in the work tree)",
           run({**notes, "scratch.md": f"{old_app}\n"},
-              listed=["README.md", FACTS_PATH, "docs/notes.md", "native/CMakeLists.txt", "native/toolchain.json"]), [])
+              listed=["README.md", FACTS_PATH, "docs/notes.md", "native/CMakeLists.txt", "native/toolchain.json",
+                      *copies]), [])
     with tempfile.TemporaryDirectory(prefix="drift-check-selftest-") as tmp:
         tree(Path(tmp), notes)
         found = [f.render() for f in tree_findings(Path(tmp), None)]
@@ -610,7 +699,7 @@ def self_test() -> int:
     found = run({**notes, "README.md": readme.replace("C%2B%2B-23-", "C%2B%2B-20-")})
     check("a version badge that differs from the pinned source fails, naming both",
           (len(found), has(found, "README.md:5:readme-facts:", "states C++ 20", "native/CMakeLists.txt pins 23")), (1, True))
-    found = run({**notes, "README.md": "# Newsuite\n\nCreative apps on one shared core.\n"})
+    found = run({**notes, "README.md": "# Newsuite Graphics Suite\n\nCreative apps on one shared core.\n"})
     check("a README with no badge where one is expected fails", has(found, "no C++ version is stated"), True)
     found = run({**notes, "native/CMakeLists.txt": "# no standard\n"})
     check("a pinned source the pattern no longer reads fails, naming the source",
@@ -618,6 +707,49 @@ def self_test() -> int:
     found = run({**notes, "native/toolchain.json": "{}\n"})
     check("a version the README does not state is still read from its source",
           (len(found), has(found, "native/toolchain.json:0:readme-facts:", "CMake")), (1, True))
+    # fact-copy: a changed fact refuses each copy still stating the old one.
+    renamed = json.loads(json.dumps(base))
+    renamed["suite"]["name"] = "Othersuite Graphics Suite"
+    found = run(notes, renamed)
+    check("a changed suite name refuses the copy still stating the old one",
+          (len(found), has(found, "README.md:0:fact-copy:", "the suite's name", "'Othersuite Graphics Suite'")), (1, True))
+    found = run({**notes, "README.md": readme.replace("# Newsuite Graphics Suite", "# Othersuite Graphics Suite")}, renamed)
+    check("the copy updated to the new fact passes", found, [])
+    reroled = json.loads(json.dumps(base))
+    reroled["apps"][0]["role"] = "Raster editor"
+    found = run(notes, reroled)
+    check("a changed app role refuses the copy still stating the old one",
+          (len(found), has(found, "AGENTS.md:0:fact-copy:", "Newapp's role", "'Raster editor'")), (1, True))
+    reslugged = json.loads(json.dumps(base))
+    reslugged["apps"][0]["slug"] = "otherapp"
+    found = run(notes, reslugged)
+    check("a changed slug refuses while the files that follow it have not moved",
+          (len(found), has(found, "icons/otherapp.svg:0:fact-copy:", "not in the tree")), (1, True))
+    retagged = json.loads(json.dumps(base))
+    retagged["apps"][0]["tag_prefix"] = "other-v"
+    found = run(notes, retagged)
+    check("a changed tag prefix refuses the release workflow still naming the old one",
+          has(found, "release.yml:0:fact-copy:", "Newapp's tag_prefix", "'other-v'"), True)
+    renamed_app = json.loads(json.dumps(base))
+    renamed_app["apps"][0]["name"] = "Otherapp"
+    found = run(notes, renamed_app)
+    check("a changed app name refuses every copy keyed to it (the name row, and the role row found by the name)",
+          (len(found), has(found, "Newapp") is False and has(found, "Otherapp's name"), has(found, "Otherapp's role")),
+          (2, True, True))
+    found = run({k: v for k, v in notes.items()}, base, listed=["README.md", FACTS_PATH, "docs/notes.md",
+                                                                "native/CMakeLists.txt", "native/toolchain.json",
+                                                                "icons/newsuite.svg", "icons/newapp.svg", "release.yml"])
+    check("a copy's file that is not in the tree is a finding", has(found, "AGENTS.md:0:fact-copy:", "not in the tree"),
+          True)
+    unguarded = json.loads(json.dumps(base))
+    unguarded["apps"][0]["copies"] = [c for c in unguarded["apps"][0]["copies"] if c["field"] != "role"]
+    check("a fact that names no copy is not guarded, and is refused",
+          has(run(notes, unguarded), "facts-malformed", "apps[0].role names no copy"), True)
+    loose = json.loads(json.dumps(base))
+    loose["suite"]["copies"][0]["pattern"] = "^# Newsuite"
+    check("a copy pattern without {value} cannot follow the fact, and is refused",
+          has(run(notes, loose), "facts-malformed", "does not contain {value}"), True)
+
     # facts-malformed.
     check("a facts file that is not JSON is one finding", has(run(notes, "{not json"), "facts-malformed", "is not JSON"), True)
     broken = json.loads(json.dumps(counted))

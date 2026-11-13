@@ -1,31 +1,125 @@
 {
  "schema": 1,
- "about": "The product facts of the Isotone Graphics Suite, stated once. A fact changes here first; scripts/drift-check.py then holds the README, every tracked text file, and the repository's settings on GitHub to this file (D00 T01 section 10). Versions are not copied here: `versions` names where each one is pinned.",
+ "about": "The product facts of the Isotone Graphics Suite, stated once. A fact changes here first; scripts/drift-check.py then holds the README, every tracked text file, and the repository's settings on GitHub to this file (D00 T01 section 10). Versions are not copied here: `versions` names where each one is pinned. Each suite and app fact names its copies (`copies`: a file and a pattern that must match, or a path that must exist), so changing a fact here refuses every copy still stating the old one.",
  "suite": {
   "name": "Isotone Graphics Suite",
   "slug": "isotone",
   "tag_prefix": "isotone-v",
   "publisher": "Rizonesoft",
-  "copyright_holder": "Rizonetech (Pty) Ltd"
+  "copyright_holder": "Rizonetech (Pty) Ltd",
+  "copies": [
+   {"field": "name", "path": "README.md", "pattern": "<img alt=\"{value}\""},
+   {"field": "name", "path": "AGENTS.md", "pattern": "the \\*\\*{value}\\*\\*"},
+   {"field": "name", "path": "installer/Suite.iss", "pattern": "#define AppName \"{value}\""},
+   {"field": "slug", "exists": "resources/icons/{value}/{value}.svg"},
+   {"field": "tag_prefix", "path": ".github/workflows/release.yml", "pattern": "- '{value}\\*'"},
+   {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "\\| `{value}1\\.2\\.3` \\|"}
+  ]
  },
  "apps": [
-  {"name": "Stilus", "slug": "stilus", "tag_prefix": "stilus-v", "role": "Vector editor"},
-  {"name": "Gesso", "slug": "gesso", "tag_prefix": "gesso-v", "role": "Raster editor"},
-  {"name": "Albumen", "slug": "albumen", "tag_prefix": "albumen-v", "role": "Digital darkroom, photo manager, and fast image viewer"},
-  {"name": "Tinctura", "slug": "tinctura", "tag_prefix": "tinctura-v", "role": "Color picker and color studio"},
-  {"name": "Capio", "slug": "capio", "tag_prefix": "capio-v", "role": "Screenshot and screen recording app"},
-  {"name": "Folium", "slug": "folium", "tag_prefix": "folium-v", "role": "Page layout and publishing"}
+  {
+   "name": "Stilus",
+   "slug": "stilus",
+   "tag_prefix": "stilus-v",
+   "role": "Vector editor",
+   "copies": [
+    {"field": "name", "path": "AGENTS.md", "pattern": "\\| \\*\\*{value}\\*\\* \\|"},
+    {"field": "role", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\| {value}"},
+    {"field": "slug", "exists": "resources/icons/{value}/{value}.svg"},
+    {"field": "name", "path": "README.md", "pattern": "^### {value} \\(vector\\)$"},
+    {"field": "name", "path": "installer/Stilus.iss", "pattern": "#define AppName \"{value}\""},
+    {"field": "tag_prefix", "path": ".github/workflows/release.yml", "pattern": "- '{value}\\*'"},
+    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "\\| `{value}1\\.2\\.3` \\| {name} \\|"}
+   ]
+  },
+  {
+   "name": "Gesso",
+   "slug": "gesso",
+   "tag_prefix": "gesso-v",
+   "role": "Raster editor",
+   "copies": [
+    {"field": "name", "path": "AGENTS.md", "pattern": "\\| \\*\\*{value}\\*\\* \\|"},
+    {"field": "role", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\| {value}"},
+    {"field": "slug", "exists": "resources/icons/{value}/{value}.svg"},
+    {"field": "name", "path": "README.md", "pattern": "^### {value} \\(raster\\)$"},
+    {"field": "name", "path": "installer/Gesso.iss", "pattern": "#define AppName \"{value}\""},
+    {"field": "tag_prefix", "path": ".github/workflows/release.yml", "pattern": "- '{value}\\*'"},
+    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "\\| `{value}1\\.2\\.3` \\| {name} \\|"}
+   ]
+  },
+  {
+   "name": "Albumen",
+   "slug": "albumen",
+   "tag_prefix": "albumen-v",
+   "role": "Digital darkroom, photo manager, and fast image viewer",
+   "copies": [
+    {"field": "name", "path": "AGENTS.md", "pattern": "\\| \\*\\*{value}\\*\\* \\|"},
+    {"field": "role", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\| {value}"},
+    {"field": "slug", "exists": "resources/icons/{value}/{value}.svg"},
+    {"field": "name", "path": "README.md", "pattern": "^### {value} \\(darkroom\\)$"},
+    {"field": "name", "path": "installer/Albumen.iss", "pattern": "#define AppName \"{value}\""},
+    {"field": "tag_prefix", "path": ".github/workflows/release.yml", "pattern": "- '{value}\\*'"},
+    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "\\| `{value}1\\.2\\.3` \\| {name} \\|"}
+   ]
+  },
+  {
+   "name": "Tinctura",
+   "slug": "tinctura",
+   "tag_prefix": "tinctura-v",
+   "role": "Color picker and color studio",
+   "copies": [
+    {"field": "name", "path": "AGENTS.md", "pattern": "\\| \\*\\*{value}\\*\\* \\|"},
+    {"field": "role", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\| {value}"},
+    {"field": "slug", "exists": "resources/icons/{value}/{value}.svg"},
+    {"field": "name", "path": "README.md", "pattern": "^\\| {value} \\| "},
+    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "`{value}`"}
+   ]
+  },
+  {
+   "name": "Capio",
+   "slug": "capio",
+   "tag_prefix": "capio-v",
+   "role": "Screenshot and screen recording app",
+   "copies": [
+    {"field": "name", "path": "AGENTS.md", "pattern": "\\| \\*\\*{value}\\*\\* \\|"},
+    {"field": "role", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\| {value}"},
+    {"field": "slug", "exists": "resources/icons/{value}/{value}.svg"},
+    {"field": "name", "path": "README.md", "pattern": "^\\| {value} \\| "},
+    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "`{value}`"}
+   ]
+  },
+  {
+   "name": "Folium",
+   "slug": "folium",
+   "tag_prefix": "folium-v",
+   "role": "Page layout and publishing",
+   "copies": [
+    {"field": "name", "path": "AGENTS.md", "pattern": "\\| \\*\\*{value}\\*\\* \\|"},
+    {"field": "role", "path": "AGENTS.md", "pattern": "\\| \\*\\*{name}\\*\\* \\| {value}"},
+    {"field": "slug", "exists": "resources/icons/{value}/{value}.svg"},
+    {"field": "name", "path": "README.md", "pattern": "^\\| {value} \\| "},
+    {"field": "tag_prefix", "path": "docs/dev/versioning.md", "pattern": "`{value}`"}
+   ]
+  }
  ],
  "repository": {
   "slug": "rizonesoft/Isotone",
   "description": "Isotone Graphics Suite: free, open source Windows creative apps in native C++23. Stilus vector editor, Gesso raster editor, Albumen digital darkroom, Tinctura color studio, Capio screen capture, Folium page layout.",
-  "topics": ["cpp", "cpp23", "direct2d", "gpl3", "graphics", "image-editor", "photo-editor", "raster-graphics", "vector-graphics", "windows"],
+  "topics": [
+   "cpp",
+   "cpp23",
+   "direct2d",
+   "gpl3",
+   "graphics",
+   "image-editor",
+   "photo-editor",
+   "raster-graphics",
+   "vector-graphics",
+   "windows"
+  ],
   "homepage": "https://rizonesoft.github.io/Isotone/"
  },
- "readme": {
-  "path": "README.md",
-  "opening_line": "Six native Windows creative apps, one shared core: a vector editor, a raster editor, a digital darkroom, a color studio, a screen capture tool, and a page layout app."
- },
+ "readme": {"path": "README.md", "opening_line": "Six native Windows creative apps, one shared core: a vector editor, a raster editor, a digital darkroom, a color studio, a screen capture tool, and a page layout app."},
  "versions": [
   {"name": "C++", "source": "native/CMakeLists.txt", "source_pattern": "set\\(CMAKE_CXX_STANDARD (\\d+)\\)", "readme_pattern": "badge/C%2B%2B-(\\d+)-"},
   {"name": "Inno Setup", "source": "installer/common.iss", "source_pattern": "\\(Inno Setup (\\d+\\.\\d+) or newer\\)", "readme_pattern": "badge/Inno%20Setup-(\\d+\\.\\d+)-"},

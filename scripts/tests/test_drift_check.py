@@ -30,8 +30,16 @@ _spec.loader.exec_module(dc)
 OLD = "Oldapp"  # an invented retired name: this file names nothing the project has retired
 FACTS = {
     "schema": 1,
-    "suite": {"name": "Newsuite", "slug": "newsuite", "tag_prefix": "newsuite-v"},
-    "apps": [{"name": "Newapp", "slug": "newapp", "tag_prefix": "newapp-v", "role": "Editor"}],
+    # One copy per fact, in a file every fixture repository holds, so the copies never decide a test about the file set.
+    "suite": {"name": "Newsuite", "slug": "newsuite", "tag_prefix": "newsuite-v", "copies": [
+        {"field": "name", "path": "README.md", "pattern": "^# {value}$"},
+        {"field": "slug", "path": "README.md", "pattern": "slug {value}"},
+        {"field": "tag_prefix", "path": "README.md", "pattern": "tag {value}"}]},
+    "apps": [{"name": "Newapp", "slug": "newapp", "tag_prefix": "newapp-v", "role": "Editor", "copies": [
+        {"field": "name", "path": "README.md", "pattern": "app {value}"},
+        {"field": "slug", "path": "README.md", "pattern": "slug {value}"},
+        {"field": "tag_prefix", "path": "README.md", "pattern": "tag {value}"},
+        {"field": "role", "path": "README.md", "pattern": "app {name}: {value}"}]}],
     "repository": {"slug": "owner/Newsuite", "description": "Newsuite.", "topics": ["graphics"],
                    "homepage": "https://example.invalid/"},
     "readme": {"path": "README.md", "opening_line": "Creative apps on one shared core."},
@@ -48,7 +56,8 @@ class IndexFileSet(unittest.TestCase):
         self.repo = Path(tempfile.mkdtemp(prefix="isotone-drift-repo-"))
         self.export = Path(tempfile.mkdtemp(prefix="isotone-drift-export-"))
         self.git("init", "-q")
-        self.write("README.md", "# Newsuite\n\nCreative apps on one shared core.\n")
+        self.write("README.md", "# Newsuite\n\nCreative apps on one shared core.\n\nslug newsuite, tag newsuite-v; "
+                                "app Newapp: Editor, slug newapp, tag newapp-v\n")
         self.write("docs/facts.json", json.dumps(FACTS))
         self.write("docs/clean.md", "Newapp.\n")
         self.git("add", "-A")
