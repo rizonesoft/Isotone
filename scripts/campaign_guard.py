@@ -1434,6 +1434,10 @@ CLAUDE_RESUME_PROMPT = (
 )
 
 # What each runner is told and called: its goal, its resume prompt, how it names its session id and heartbeat tools.
+# The campaign's name in its window title: Claude Code takes it as `--name`, and `agy` gets it set on the console
+# before it starts (`_World.set_title`), so both runners' windows read the same and say which repository they run.
+CAMPAIGN_NAME = "Isotone campaign"
+
 RUNNER_TEXT = {
     "agy": {"goal": GOAL, "resume": RESUME_PROMPT, "name": "Antigravity (`agy`)", "label": "Antigravity",
             "session": "<Conversation ID>", "cron": "`schedule`", "cron_list": "`manage_task` (`list`)",
@@ -1822,6 +1826,15 @@ class _World:
     def slot_held(self) -> bool:
         return slot_held(self.root)
 
+    def set_title(self, title: str) -> None:
+        """Name this console window. `agy` never sets the host terminal title, so without this its window carries
+        a generic title and the operator cannot tell which repository it belongs to."""
+        if os.name == "nt":
+            import ctypes
+            ctypes.windll.kernel32.SetConsoleTitleW(title)
+        else:
+            print(f"]0;{title}", end="", flush=True)
+
     def run(self, argv: list[str], extra_env: dict | None = None, runner: str = "agy") -> int:
         """Run the runner's CLI (`agy` or `claude`) to its end in this console, inside this process's job object.
         The job is kill-on-close and this process holds its only handle, so when this process ends (the session
@@ -2046,7 +2059,7 @@ def start(root: str, world=None, runner: str = "agy") -> tuple[int, str]:
                 # Claude Code takes its session id up front; the SessionStart note binds it to the launch, and only
                 # then hands the guard over, so a launch that fails leaves the old runner's guard as it was.
                 argv = ([*args, "-i", prompt] if runner == "agy"
-                        else ["--session-id", str(uuid.uuid4()), *args, "--name", "Isotone campaign", prompt])
+                        else ["--session-id", str(uuid.uuid4()), *args, "--name", CAMPAIGN_NAME, prompt])
                 _write_json(_launch_path(root), {
                     "runner": runner,
                     "session_id": "",
@@ -2069,11 +2082,13 @@ def start(root: str, world=None, runner: str = "agy") -> tuple[int, str]:
                 label = "Starting the Isotone campaign in Antigravity."
             else:
                 session = str(uuid.uuid4())
-                argv = ["--session-id", session, *args, "--name", "Isotone campaign", "/goal " + text["goal"]]
+                argv = ["--session-id", session, *args, "--name", CAMPAIGN_NAME, "/goal " + text["goal"]]
                 _write_json(_launch_path(root), {"runner": runner, "session_id": session, "args": args,
                                                  "at": _utc_now()})
                 label = f"Starting the Isotone campaign in {text['label']} (session {session})."
         print(label, flush=True)
+        if runner == "agy":  # Claude Code titles its own window from --name
+            world.set_title(CAMPAIGN_NAME)
         code = world.run(argv, extra_env=extra_env, runner=runner)
         # The session is gone. It is recorded as ended, and nothing restarts it: not after a crash, not after a
         # clean exit. A launch that never ran (it raised) is not an ended session, so its record is left alone.
@@ -3477,7 +3492,7 @@ def _self_test() -> int:
     class FakeWorld:
         def __init__(self, root):
             self.root, self.live, self.runs = root, [], []
-            self.minted, self.runners = [], []
+            self.minted, self.runners, self.titles = [], [], []
             self.exit = 0  # what the fake session exits with
             self.during = None  # called while a fake session "runs", with the slot held
 
@@ -3486,6 +3501,9 @@ def _self_test() -> int:
 
         def slot_held(self):
             return slot_held(self.root)
+
+        def set_title(self, title):
+            self.titles.append(title)
 
         def run(self, argv, extra_env=None, runner="agy"):
             self.runs.append(argv)
@@ -3842,6 +3860,7 @@ def _self_test() -> int:
         world.runs.clear()
         world.runners.clear()
         world.live = []
+        world.titles.clear()
         code, said = start(root, world, runner="claude")
         argv = world.runs[0] if world.runs else []
         csid = argv[1] if len(argv) > 1 else ""
@@ -3850,6 +3869,8 @@ def _self_test() -> int:
               and argv[:2] == ["--session-id", csid] and argv[2:7] == cflags
               and argv[7:9] == ["--name", "Isotone campaign"] and argv[-1] == "/goal " + CLAUDE_GOAL
               and str(uuid.UUID(csid)) == csid, str(argv[:7]))
+        check("start-claude-leaves-the-window-title-to-its-name-flag", world.titles == [], repr(world.titles))
+        check("start-claude-names-the-session-from-the-one-campaign-name", CAMPAIGN_NAME == "Isotone campaign")
         check("start-claude-records-the-session-and-that-it-ended",
               _read_json(_launch_path(root)) | {"at": None, "ended_at": None}
               == {"runner": "claude", "session_id": csid, "args": cflags, "at": None, "ended_at": None,
@@ -3869,8 +3890,10 @@ def _self_test() -> int:
         world.runs.clear()
         world.runners.clear()
         world.minted.clear()
+        world.titles.clear()
         code, _ = start(root, world)
         to_agy = read_guard(root) or {}
+        check("start-agy-titles-its-window-with-the-campaign-name", world.titles == [CAMPAIGN_NAME], repr(world.titles))
         check("start-agy-hands-a-claude-run-to-antigravity",
               code == 0 and world.runners == ["agy"] and to_agy.get("runner") == "agy"
               and to_agy.get("session_id") == (world.minted or [""])[0] and to_agy.get("run_id") == cguard.get("run_id")
