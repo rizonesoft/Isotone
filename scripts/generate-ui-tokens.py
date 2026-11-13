@@ -487,7 +487,7 @@ def main(argv=None):
             committed = path.read_bytes().decode("utf-8").replace("\r\n", "\n") if path.is_file() else ""
             if committed != text:
                 stale += stale_rows(name, committed, text) or [f"{name}: differs"]
-        for row in stale[:40]:
+        for row in stale:  # every one: a broad design change must not hide a token past some cut-off
             print(f"generate-ui-tokens: stale: {row}")
         if stale:
             print(f"generate-ui-tokens: {len(stale)} row(s) differ from docs/design/tokens.json; run "

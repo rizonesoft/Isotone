@@ -4,6 +4,7 @@ is named by its token, and every source the generator promises to refuse is refu
 
 import copy
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -70,6 +71,21 @@ class GenerateUiTokensTest(unittest.TestCase):
         self.assertRegex(out, r"stale: tokens\.generated\.cpp:\d+: titlebar-h")
         self.assertNotIn("surface-panel (light)", out)
         self.assertIn("2 row(s) differ", out)
+
+    def test_every_stale_row_is_named_however_many(self):
+        """A change to every size token: each of them is named, with no cut-off."""
+        changed = copy.deepcopy(self.source)
+        names = []
+        for group in ("spacing", "radius", "size"):
+            for token in changed[group]["tokens"]:
+                token["value"] = f"{float(token['value'][:-2]) + 1000}px"
+                names.append(token["name"])
+        self.assertGreater(len(names), 40)
+        code, out = self.run_generator("--check", "--out", str(COMMITTED), tokens=changed)
+        self.assertEqual(code, 1, out)
+        named = re.findall(r"stale: tokens\.generated\.cpp:\d+: (\S+)", out)
+        self.assertEqual(sorted(named), sorted(names))
+        self.assertIn(f"{len(names)} row(s) differ", out)
 
     def test_a_missing_committed_file_is_stale(self):
         code, out = self.run_generator("--check", "--out", str(self.work / "nothing-here"))
