@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -19,6 +20,27 @@ ROOT = Path(__file__).resolve().parents[2]
 TIDY = ROOT / "scripts" / "native-tidy.ps1"
 DEV_ENV = ROOT / "scripts" / "dev-env.ps1"
 VSWHERE = Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")) / "Microsoft Visual Studio" / "Installer" / "vswhere.exe"
+
+
+
+def run_tree(command, timeout=600, cwd=None):
+    """Run a command and return (exit code, its output). On a timeout the whole process tree is ended, not only the
+    direct child: pwsh starts cmake, which starts ninja and the compilers, and a child left running keeps writing and
+    keeps the output pipes open (subprocess.run's timeout ends one process). The timeout is reported as exit code
+    None with what was read."""
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=cwd)
+    try:
+        out, _ = proc.communicate(timeout=timeout)
+        return proc.returncode, out
+    except subprocess.TimeoutExpired:
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True)
+        try:
+            out, _ = proc.communicate(timeout=30)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            out = ""
+        return None, f"timed out after {timeout} s; the process tree was ended\n{out}"
+
 
 CLEAN = "int answer()\n{\n    return 42;\n}\n"
 MOVED = ("#include <string>\n#include <utility>\n\nbool moved()\n{\n    std::string text{\"x\"};\n"
@@ -54,9 +76,7 @@ class NativeTidyTest(unittest.TestCase):
         (self.build / "compile_commands.json").write_text(json.dumps(entries), encoding="utf-8")
 
     def run_tidy(self):
-        proc = subprocess.run(["pwsh", "-NoProfile", "-File", str(TIDY), "-Root", str(self.root), "-SkipBuild"],
-                              capture_output=True, text=True, timeout=600)
-        return proc.returncode, proc.stdout + proc.stderr
+        return run_tree(["pwsh", "-NoProfile", "-File", str(TIDY), "-Root", str(self.root), "-SkipBuild"])
 
     def test_a_clean_translation_unit_passes(self):
         self.database({"clean.cpp": CLEAN})
@@ -125,11 +145,9 @@ class NativeTidyTest(unittest.TestCase):
         block = (f"cmake -S '{project}' -B '{project / 'build'}' -G Ninja -DCMAKE_CXX_COMPILER=cl *> $null; "
                  f"if ($LASTEXITCODE -ne 0) {{ 'configure failed'; exit 3 }}; "
                  f"cmake --build '{project / 'build'}'; exit $LASTEXITCODE")
-        proc = subprocess.run(["pwsh", "-NoProfile", "-File", str(DEV_ENV), "-Arch", "x64", "-Run", block],
-                              capture_output=True, text=True, timeout=600, cwd=ROOT)
-        out = proc.stdout + proc.stderr
+        code, out = run_tree(["pwsh", "-NoProfile", "-File", str(DEV_ENV), "-Arch", "x64", "-Run", block], cwd=ROOT)
         self.assertNotIn("configure failed", out)
-        self.assertNotEqual(proc.returncode, 0, out)
+        self.assertNotEqual(code, 0, out)
         self.assertIn("C6011", out)
 
 
@@ -150,9 +168,7 @@ class GeneratedSourcesTest(unittest.TestCase):
 
     def generate(self, preset):
         block = f"Push-Location native; cmake --build --preset {preset} --target isotone_generated; exit $LASTEXITCODE"
-        proc = subprocess.run(["pwsh", "-NoProfile", "-File", str(DEV_ENV), "-Arch", "x64", "-Run", block],
-                              capture_output=True, text=True, timeout=600, cwd=ROOT)
-        return proc.returncode, proc.stdout + proc.stderr
+        return run_tree(["pwsh", "-NoProfile", "-File", str(DEV_ENV), "-Arch", "x64", "-Run", block], cwd=ROOT)
 
     def test_the_generated_target_writes_the_header_and_compiles_and_links_nothing(self):
         """With the header absent and with a stale one, in the repository's configured Debug and Release trees: the
@@ -160,12 +176,14 @@ class GeneratedSourcesTest(unittest.TestCase):
         build id step would leave the header absent or stale."""
         head = subprocess.run(["git", "rev-parse", "--short=12", "HEAD"], capture_output=True, text=True, cwd=ROOT).stdout.strip()
         self.assertRegex(head, r"^[0-9a-f]{12}$")
-        checked = 0
-        for preset in ("x64-debug", "x64-release"):
-            tree = ROOT / "artifacts" / "native" / preset
-            if not (tree / "build.ninja").is_file():
-                continue
-            header = tree / GENERATED_HEADER
+        presets = ("x64-debug", "x64-release")
+        missing = [preset for preset in presets
+                   if not (ROOT / "artifacts" / "native" / preset / "build.ninja").is_file()]
+        if missing:
+            # Both configurations or neither: one alone would report a pass the Release tree never earned.
+            self.skipTest(f"no configured tree under artifacts/native for: {', '.join(missing)}")
+        for preset in presets:
+            header = ROOT / "artifacts" / "native" / preset / GENERATED_HEADER
             for state in ("absent", "stale"):
                 with self.subTest(preset=preset, state=state):
                     if state == "absent":
@@ -179,9 +197,20 @@ class GeneratedSourcesTest(unittest.TestCase):
                     self.assertRegex(text, rf'#define ISOTONE_BUILD_ID "{head}(-dirty)?"')
                     self.assertNotIn("Linking", out)
                     self.assertNotIn("Building", out)
-                    checked += 1
-        if checked == 0:
-            self.skipTest("no configured x64-debug or x64-release tree under artifacts/native")
+
+    def test_a_timeout_ends_the_whole_process_tree(self):
+        """A command that starts a child and waits is stopped with its child: the marker the child would write after
+        the timeout never appears."""
+        folder = Path(tempfile.mkdtemp(prefix="native-tidy-tree-"))
+        self.addCleanup(shutil.rmtree, folder, ignore_errors=True)
+        marker = folder / "child-survived.txt"
+        child = f"Start-Sleep -Seconds 6; Set-Content -LiteralPath '{marker}' -Value alive"
+        parent = f"pwsh -NoProfile -Command \"{child}\"; exit $LASTEXITCODE"
+        code, out = run_tree(["pwsh", "-NoProfile", "-Command", parent], timeout=2)
+        self.assertIsNone(code, out)
+        self.assertIn("timed out after 2 s", out)
+        time.sleep(7)
+        self.assertFalse(marker.exists(), "the child outlived the timeout")
 
 
 if __name__ == "__main__":
