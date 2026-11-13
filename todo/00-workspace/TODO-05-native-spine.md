@@ -2,7 +2,7 @@
 schema_version: 1
 id: native-spine
 domain: 00-workspace
-status: draft
+status: done
 title: "TODO-05 -- The Native Spine: Toolchain, Build, Gates, and CI"
 depends_on: []
 track: W5
@@ -65,7 +65,7 @@ track: W5
 |   8   |   §8    | CI for x64 and ARM64 | §7, D00 T04 §1 |  [x]   |
 |   9   |   §9    | Fuzzing: the qualified toolchain, the corpus layout, and the nightly budget | §5, §8 |  [x]   |
 |  10   |   §10   | The proof standard for C++ | §7, §9 |  [x]   |
-|  11   |   §11   | The tidy gate builds only the sources it reads | §4 |  [ ]   |
+|  11   |   §11   | The tidy gate builds only the sources it reads | §4 |  [x]   |
 
 ---
 
@@ -346,6 +346,9 @@ A Test checkpoint may cite only a gate that exists (AGENTS.md, What counts as pr
 - [x] Commit: `"workspace: the tidy gate builds only the generated sources it reads"` Done 2026-11-13: `a44fbdb` (the target and the tidy gate), `6e26c69` (round 1), `f9d9c56` (configure only an unconfigured tree), `baac9ab` (the dependency lint reads the link graph: the root cause). The build workflow read back green on the third repair: `ci-wait: baac9ab473d8 build success https://github.com/rizonesoft/Isotone/actions/runs/43425686453` (jobs `native` and `native-arm64-tests`), `ci-wait: baac9ab473d8 plan-gates success https://github.com/rizonesoft/Isotone/actions/runs/43425686468`; `repair: episode 85efc7dc3707 closed green at baac9ab473d8 after 3 attempt(s)`.
 
 **Test checkpoint:** Unit test and driven run: `python scripts/tests/test_native_tidy.py` passes with `test_the_gate_builds_only_generated_sources`, `test_the_generated_target_writes_the_header_and_compiles_and_links_nothing`, `test_the_gate_configures_only_a_tree_that_is_not_configured`, `test_building_the_generated_target_leaves_build_ninja_alone`, and `test_a_timeout_ends_the_whole_process_tree`; `python scripts/native-deps-lint.py --self-test` reports 0 failed and the lint 0 findings; `pwsh scripts/native-tidy.ps1` reports every translation unit with 0 diagnostics and, on fresh trees in the job's order, the artifact gate after the lint and the tidy gate reports no stale target; the `build` workflow reads back green on the repair, its tidy step relinking nothing. Cheaper substitute that fails: re-running the job until the relink happens to win the race, which leaves the gate relinking 24 executables it never reads on every run.
+
+> **Verified:** 2026-11-13 | §11 | f0f805b7e817baa963630337f858420475a34052
+> **Review:** `docs/reviews/d00-t05-s11.json`
 
 ## Verification
 
