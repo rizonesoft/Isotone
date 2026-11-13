@@ -2,7 +2,7 @@
 schema_version: 1
 id: native-spine
 domain: 00-workspace
-status: done
+status: draft
 title: "TODO-05 -- The Native Spine: Toolchain, Build, Gates, and CI"
 depends_on: []
 track: W5
@@ -65,6 +65,7 @@ track: W5
 |   8   |   §8    | CI for x64 and ARM64 | §7, D00 T04 §1 |  [x]   |
 |   9   |   §9    | Fuzzing: the qualified toolchain, the corpus layout, and the nightly budget | §5, §8 |  [x]   |
 |  10   |   §10   | The proof standard for C++ | §7, §9 |  [x]   |
+|  11   |   §11   | The tidy gate builds only the sources it reads | §4 |  [ ]   |
 
 ---
 
@@ -317,6 +318,28 @@ A Test checkpoint may cite only a gate that exists (AGENTS.md, What counts as pr
 > **Plan review:** gpt medium, filed D00 T06 §3, D00 T07 §2, D00 T07 §3 (10 findings: 5 filed into 3 items, 2 deferred into backlog B-086 in 59b493ab7282, 3 rejected) (run 20261109-D00-T05-S10-gpt)
 > **CRUD:** not applicable (proof-standard documentation in `todo/README.md`, `AGENTS.md`, and `.claude/skills/create-todo/todo-template.md`, and `scripts/todo-graph.py` / `scripts/todo-validate.py` validator rules, with no user record, document, or setting)
 > **Duration:** 2026-11-09T01:06:30Z to 2026-11-09T03:20:00Z
+
+## 11. The Tidy Gate Builds Only the Sources It Reads
+
+> **Started:** 2026-11-13T11:17:18Z
+
+**Origin:** discovered run=48d4ff71b58e 2026-11-13 -- a red build read-back on `85efc7d` (repair attempt 1 of 3)
+
+`scripts/native-tidy.ps1` (`D00 T05 §4`) configures a preset for its compile database and then runs `cmake --build --preset <preset>` only so that the generated build id header exists, but that builds every target: whenever the build id changed since the preset was last built, it recompiles `isotone_core` and relinks every test and fuzz executable (24 link steps on `85efc7d`) that clang-tidy never reads. In the `native` job that relink runs seconds after `scripts/native-pe-check.py` opened every one of those executables, and build run 43411490732 on `85efc7d` failed there twice, on a different executable each attempt (`FAILED: tests/fuzz/settings/settings_fuzz_replay.exe`, then `FAILED: tests/core/app_paths_test.exe`, each with `The process cannot access the file because it is being used by another process.`), while the same sources built and tested green in every preset of the same run. A defect in shipped work (`D00 T05 §4`'s gate does work it does not need, and that work is what fails), so it is a section of its own, the repair commit's owner.
+
+**Fidelity:** no surface of its own (non-feature infrastructure: a build gate with no competitor-facing feature, so no `**Exceed:**` paragraph).
+**Needs:** Windows host (build/test)
+
+- -> XREF: D00 T05 §4 -- the tidy gate this section narrows to the sources it reads
+- -> XREF: D01 T27 §2 -- the section whose candidate `85efc7d` the red read-back was on; its review waits for this repair
+
+- [ ] Add the target `isotone_generated` in `native/CMakeLists.txt`: a custom target that depends on every target that writes a generated source (`isotone_build_id` today), with a comment telling a later generator to join it. Done when: `ninja -n isotone_generated` in a built `x64-debug` tree lists no compile and no link step.
+- [ ] Make `scripts/native-tidy.ps1` build `--target isotone_generated` for the preset it checks and for `x64-release`, in place of every target. Done when: `python scripts/tests/test_native_tidy.py` passes with `test_the_gate_builds_only_generated_sources` (the script names the target in both builds and no build without it) and `test_the_generated_target_compiles_and_links_nothing` (a dry run of the target in the repository's built `x64-debug` tree lists no `Building` and no `Linking` step), and `pwsh scripts/native-tidy.ps1` on the tree still reports every translation unit with 0 diagnostics.
+- [ ] Record the gate's cost before and after in the section: the seconds `native-tidy.ps1` spends in its two builds after a commit changed the build id. Done when: both figures are quoted in this item.
+- [ ] Update `docs/dev/build.md` and the script's header comment to say what the gate builds. Done when: both name `isotone_generated`.
+- [ ] Commit: `"workspace: the tidy gate builds only the generated sources it reads"`
+
+**Test checkpoint:** Unit test and driven run: `python scripts/tests/test_native_tidy.py` passes with `test_the_gate_builds_only_generated_sources` and `test_the_generated_target_compiles_and_links_nothing`; `pwsh scripts/native-tidy.ps1` reports every translation unit with 0 diagnostics; the `build` workflow reads back green on the repair, its tidy step relinking nothing. Cheaper substitute that fails: re-running the job until the relink happens to win the race, which leaves the gate relinking 24 executables it never reads on every run.
 
 ## Verification
 

@@ -31,6 +31,7 @@ track: F14
 - -> XREF: D00 T07 §3 -- authored this file; every entry section waits on its stamp
 - -> XREF: D01 T02 §1 -- the C#-era paths and logging section, re-planned by `D00 T07 §4` onto this file rather than a second copy
 - -> XREF: D01 T15 §1 -- the foundation test host logs and keeps its settings through this file
+- -> XREF: D00 T05 §11 -- the tidy gate repair the red build read-back on §2's candidate `85efc7d` was filed as
 - -> XREF: D01 T19 §1 -- document saves keep their own seven-invariant sequence; this file's atomic write serves settings and other app data, never a user's document
 
 ## Outcome
