@@ -209,7 +209,7 @@ Every later phase builds on the native stack's foundations, so this phase proves
 | [x] | `D00 T07 §3` | Author the native foundations and settle the structure files                                        |  10   |
 | [x] | `D01 T27 §1` | App-Data Paths and Structured Logging                                                               |   3   |
 | [x] | `D01 T27 §2` | Atomic File Writes and the Settings Store                                                           |   6   |
-| [ ] | `D01 T14 §1` | The isotone::ui Library and the Generated Token Tables                                              |   6   |
+| [ ] | `D01 T14 §1` | The isotone::ui Library and the Generated Token Tables                                              |   7   |
 | [ ] | `D01 T15 §1` | The Window, DPI Layout, and the Foundation Test Host                                                |   5   |
 | [ ] | `D01 T15 §2` | The Renderer: Device, Visuals, Flip-Sequential Swap Chains, and Partial Redraw                      |   5   |
 | [ ] | `D01 T14 §2` | Run-Time Resolution and Live Switching, Proved in the Host                                          |   5   |
