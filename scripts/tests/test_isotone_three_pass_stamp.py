@@ -2,6 +2,7 @@
 import json
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -49,7 +50,7 @@ title: "TODO-01 -- Alpha Fixture"
 
 Non-feature workspace infrastructure fixture.
 
-- [ ] Write `native/thing.txt` with the alpha marker. Done when: `native/thing.txt` holds `THING=2`. Cheaper substitute: an empty file must fail.
+- [ ] Write `native/thing.txt` with the alpha marker, and activate the proof markers naming this section with the runner command `ctest --preset x64-debug -L drive`. Done when: `native/thing.txt` holds `THING=2`. Cheaper substitute: an empty file must fail.
 - [ ] Commit: `"workspace: add alpha thing (D00 T01 §1)"`
 
 **Test checkpoint:** Unit tests -- `python scripts/todo-graph.py validate` exits 0.
@@ -143,7 +144,12 @@ class IsotoneThreePassEndToEndTests(unittest.TestCase):
 
         todo_dir = self.repo / "todo"
         readme = todo_dir / "README.md"
-        readme.write_text(readme.read_text(encoding="utf-8").replace("D00 T07 \u00a73", "D00 T01 \u00a72"), encoding="utf-8")
+        # Every proof marker names the fixture's open \u00a72; a test that proves activation re-points them.
+        readme.write_text(
+            re.sub(r"until `D\d{2} T\d{2} \u00a7\d+` lands", "until `D00 T01 \u00a72` lands",
+                   readme.read_text(encoding="utf-8")),
+            encoding="utf-8",
+        )
         (todo_dir / "backlog.md").write_text(
             "# Backlog\n\n## Entries\n\n## Removed with operator approval\n",
             encoding="utf-8",
@@ -250,6 +256,13 @@ class IsotoneThreePassEndToEndTests(unittest.TestCase):
         lenses = {kind: schedule[kind]["lenses"] for kind in ("plan", "completion", "reconciliation")}
         lenses["round"] = [name for name in schedule["rounds"][0]["lenses"] if name != "design"]
 
+        # §1 owns every proof marker here, so its stamp activates them (D00 T07 §3).
+        readme = self.repo / "todo/README.md"
+        readme.write_text(
+            readme.read_text(encoding="utf-8").replace("until `D00 T01 §2` lands", "until `D00 T01 §1` lands"),
+            encoding="utf-8",
+        )
+
         plan = self.review("plan", self.start, reply("plan", lenses["plan"]))
         self.assertEqual((plan["reviewer"], plan["lenses"], plan["effort"]), ("astra", lenses["plan"], "medium"))
 
@@ -320,6 +333,13 @@ class IsotoneThreePassEndToEndTests(unittest.TestCase):
             "--check", "python scripts/todo-graph.py validate -> exit 0",
         )
         self.assertEqual(stamp.returncode, 0, stamp.stdout + stamp.stderr)
+        readme = (self.repo / "todo/README.md").read_text(encoding="utf-8")
+        self.assertEqual(
+            (readme.count("until `D00 T01 §1` lands"),
+             readme.count("`ctest --preset x64-debug -L drive` (landed in `D00 T01 §1`)")),
+            (0, 2),
+            "the owner's stamp activates every proof marker naming it",
+        )
 
         sync = self.run_script("scripts/todo-graph.py", "plan", "--sync")
         self.assertEqual(sync.returncode, 0, sync.stdout + sync.stderr)
@@ -351,6 +371,11 @@ class IsotoneThreePassEndToEndTests(unittest.TestCase):
         self.assertFalse((self.repo / RECORD).exists())
         self.assertEqual(len(list((self.repo / "docs/reviews").glob("d00-t01-s1.revoked-*.json"))), 1)
         self.assertEqual(len(list((self.repo / "docs/reviews/00-workspace").glob("D00-T01-s1.revoked-*.md"))), 1)
+        self.assertEqual(
+            (self.repo / "todo/README.md").read_text(encoding="utf-8").count("until `D00 T01 §1` lands"),
+            2,
+            "an unstamp of the owner makes its proof unusable again",
+        )
         val_after = self.run_script("scripts/todo-graph.py", "validate")
         self.assertEqual(val_after.returncode, 0, val_after.stdout + val_after.stderr)
         plan_after = self.run_script("scripts/todo-graph.py", "plan", "--check")

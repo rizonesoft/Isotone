@@ -6554,7 +6554,7 @@ PROOF_RUNNER_TOKEN_RE = re.compile(
     r"dev-env\.ps1|run-arm64-tests\.ps1|test_native_fuzz\.py|fuzz_replay_main\.cpp|"
     r"native-artifact-gate\.py|native-format\.ps1|native-tidy\.ps1|"
     r"native-std-check\.py|native-pe-check\.py|native-deps-lint\.py|"
-    r"design-lint\.py|visual-tests\.ps1)"
+    r"design-lint\.py|visual-tests\.ps1|goldens\.py)"
 )
 PROOF_UNUSABLE_FULL_RE = re.compile(
     r"^unusable for a stamp until `?(?P<ref>D\d{2} T\d{2} §\d+)`? lands(?:\s*\([^()]+\))?\.?$",
@@ -6865,6 +6865,35 @@ def proof_findings(todos: list[Todo]) -> list[tuple[str, str]]:
     if not active_unusable:
         return out
 
+    # D00 T07 §3: until a proof's owner is stamped, an open section may declare
+    # the proof it will use when it is the owner or depends on the owner,
+    # directly or through other sections; anything else citing it is refused.
+    by_key = {(t.domain, t.number): t for t in todos}
+    by_id = {t.id: t for t in todos}
+    upstream_cache: dict[str, set[str]] = {}
+
+    def _sec_key(t: Todo, num: int) -> str:
+        return f"D{t.domain.split('-')[0]} T{t.number} §{num}"
+
+    def _upstream(t: Todo, num: int) -> set[str]:
+        start = _sec_key(t, num)
+        if start not in upstream_cache:
+            seen: set[str] = set()
+            stack = [(t, num)]
+            while stack:
+                cur_t, cur_n = stack.pop()
+                cur_s = cur_t.sections.get(cur_n)
+                for raw in (cur_s.depends_on if cur_s else []):
+                    hit = resolve_ref(raw, cur_t, by_key)
+                    if hit is None or hit[0] not in by_id:
+                        continue
+                    dep_key = _sec_key(by_id[hit[0]], hit[1])
+                    if dep_key not in seen:
+                        seen.add(dep_key)
+                        stack.append((by_id[hit[0]], hit[1]))
+            upstream_cache[start] = seen
+        return upstream_cache[start]
+
     for t in todos:
         is_deferred_file = t.status in ("blocked", "superseded")
         sec_checkpoints: dict[int, list[str]] = {}
@@ -6926,13 +6955,16 @@ def proof_findings(todos: list[Todo]) -> list[tuple[str, str]]:
                     flags=re.IGNORECASE,
                 )[0]
                 for desc, ref, pat in active_unusable:
-                    if (desc, ref) not in reported and pat.search(cp_main):
-                        reported.add((desc, ref))
-                        out.append((
-                            "checkpoint-proof-unusable",
-                            f"{t.path}:{s.line}: §{num} Test checkpoint cites {desc}, "
-                            f"which todo/README.md marks unusable for a stamp until {ref} lands",
-                        ))
+                    if (desc, ref) in reported or not pat.search(cp_main):
+                        continue
+                    if s.status != "x" and (_sec_key(t, num) == ref or ref in _upstream(t, num)):
+                        continue
+                    reported.add((desc, ref))
+                    out.append((
+                        "checkpoint-proof-unusable",
+                        f"{t.path}:{s.line}: §{num} Test checkpoint cites {desc}, "
+                        f"which todo/README.md marks unusable for a stamp until {ref} lands",
+                    ))
     return out
 
 
@@ -13357,7 +13389,11 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             f"| [{_pf_prefix}-07](./{_pf_prefix}-07-replan.md) | Replan |\n",
             encoding="utf-8",
         )
-        _pf_readme = (REPO / "todo" / "README.md").read_text(encoding="utf-8")
+        _pf_readme = re.sub(
+            r"until `D\d{2} T\d{2} §\d+` lands",
+            "until `D00 T07 §3` lands",
+            (REPO / "todo" / "README.md").read_text(encoding="utf-8"),
+        )
 
         def _pf_write_readme(content: str = _pf_readme) -> None:
             (pf_todo / "README.md").write_text(content, encoding="utf-8")
@@ -13366,9 +13402,17 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             s1_cp: str = "Static evidence: `python scripts/todo-graph.py validate` exits 0.",
             s3_status: str = " ",
             file_status: str = "draft",
+            s3_cp: str = "`true`",
+            s4_cp: str = "`true`",
+            s5_cp: str = "`true`",
+            s4_status: str = " ",
         ) -> None:
-            s3_stamp = "\n> **Verified:** 2026-11-09 | §3 | fixture\n" if s3_status == "x" else ""
-            s3_box = "x" if s3_status == "x" else " "
+            def _box(status: str) -> str:
+                return "x" if status == "x" else " "
+
+            def _stamp(num: int, status: str) -> str:
+                return f"\n> **Verified:** 2026-11-09 | §{num} | fixture\n" if status == "x" else ""
+
             body = (
                 f"---\nschema_version: 1\nid: proof-replan\ndomain: 00-workspace\nstatus: {file_status}\n"
                 f"title: \"{_pf_prefix}-07 -- Replan fixture\"\n---\n\n# {_pf_prefix}-07 -- Replan fixture\n\n"
@@ -13376,13 +13420,23 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
                 "| :---: | :-----: | ----------- | ---------- | :----: |\n"
                 "| 1 | §1 | Consumer | -- | [ ] |\n"
                 "| 2 | §2 | Mid | §1 | [ ] |\n"
-                f"| 3 | §3 | Foundations | §2 | [{s3_status}] |\n\n---\n\n"
+                f"| 3 | §3 | Foundations | §2 | [{_box(s3_status)}] |\n"
+                f"| 4 | §4 | Direct | §3 | [{_box(s4_status)}] |\n"
+                "| 5 | §5 | Transitive | §4 | [ ] |\n\n---\n\n"
                 f"## 1. Consumer\n\nContext.\n\n- [ ] Step 1\n- [ ] Commit: `\"selftest: consumer\"`\n\n"
                 f"**Test checkpoint:** {s1_cp}\n\n"
                 f"## 2. Mid\n\nContext.\n\n- [ ] Step 2\n- [ ] Commit: `\"selftest: mid\"`\n\n"
                 "**Test checkpoint:** `true`\n\n"
-                f"## 3. Foundations\n\nContext.\n\n- [{s3_box}] Step 3\n- [{s3_box}] Commit: `\"selftest: foundations\"`\n\n"
-                f"**Test checkpoint:** `true`\n{s3_stamp}"
+                f"## 3. Foundations\n\nContext.\n\n- [{_box(s3_status)}] Step 3\n"
+                f"- [{_box(s3_status)}] Activate the proof: the stamp rewrites the marker to the runner command "
+                "`python scripts/goldens.py compare`.\n"
+                f"- [{_box(s3_status)}] Commit: `\"selftest: foundations\"`\n\n"
+                f"**Test checkpoint:** {s3_cp}\n{_stamp(3, s3_status)}\n"
+                f"## 4. Direct\n\nContext.\n\n- [{_box(s4_status)}] Step 4\n"
+                f"- [{_box(s4_status)}] Commit: `\"selftest: direct\"`\n\n"
+                f"**Test checkpoint:** {s4_cp}\n{_stamp(4, s4_status)}\n"
+                "## 5. Transitive\n\nContext.\n\n- [ ] Step 5\n- [ ] Commit: `\"selftest: transitive\"`\n\n"
+                f"**Test checkpoint:** {s5_cp}\n"
             )
             (pf_todo / "00-workspace" / f"{_pf_prefix}-07-replan.md").write_text(body, encoding="utf-8")
 
@@ -13423,6 +13477,52 @@ Opus outage: sign-off rung unreachable, failed over to Sol.
             check("proof: a checkpoint citing synthetic pointer injection while marked unusable is refused",
                   (_pf_classes(), any("Driven run with evidence" in m and "D00 T07 §3" in m for m in _pf_msgs())),
                   (["checkpoint-proof-unusable"], True))
+            # D00 T07 §3: the owner, and the open sections waiting on it, may declare the proof they will use.
+            _gold = "Golden render: `docs/captures/golden/foundation/Panel/` matches its approved golden."
+            _pf_write_todo(s3_cp=_gold)
+            check("proof: the open owning section may cite its own unusable proof", _pf_classes(), [])
+            _pf_write_todo(s4_cp=_gold)
+            check("proof: an open section depending on the owner directly may cite its unusable proof",
+                  _pf_classes(), [])
+            _pf_write_todo(s5_cp=_gold)
+            check("proof: an open section depending on the owner through another section may cite it",
+                  _pf_classes(), [])
+            _pf_write_todo(s4_cp=_gold, s4_status="x")
+            check("proof: a dependant stamped before the owner lands is still refused",
+                  (_pf_classes(), any("§4 Test checkpoint cites" in m for m in _pf_msgs())),
+                  (["checkpoint-proof-unusable"], True))
+            _pf_write_todo(s1_cp=_gold, s3_cp=_gold, s4_cp=_gold)
+            check("proof: with the runner committed and the owner open, an unrelated section is still refused",
+                  (_pf_classes(), [m.split(": ", 1)[1].split(" ")[0] for m in _pf_msgs()]),
+                  (["checkpoint-proof-unusable"], ["§1"]))
+            # The owner's stamp activates the proof in the same write (scripts/lib/todo_graph.py stamp).
+            _lib_tg = lib_todo_graph_module()
+            _pf_write_todo(s3_cp=_gold, s4_cp=_gold)
+            _fx = (pf_todo / "00-workspace" / f"{_pf_prefix}-07-replan.md").read_text(encoding="utf-8")
+            _owner = _fx[_fx.index("## 3."):_fx.index("## 4.")]
+            _act, _n = _lib_tg.activate_proof_markers(_pf_readme, "D00 T07 §3", _owner)
+            check("proof: the owner's stamp rewrites every marker naming it to its runner command",
+                  (_n, "until `D00 T07 §3` lands" in _act,
+                   _act.count("`python scripts/goldens.py compare` (landed in `D00 T07 §3`)")),
+                  (2, False, 2))
+            try:
+                _lib_tg.activate_proof_markers(_pf_readme, "D00 T07 §3", _owner.replace("runner command", "command"))
+                _no_cmd = "accepted"
+            except _lib_tg.Refused as exc:
+                _no_cmd = "refused" if "runner command" in str(exc) else str(exc)
+            check("proof: an owner stamp whose items name no runner command is refused", _no_cmd, "refused")
+            _pf_write_readme(_act)
+            _pf_write_todo(s3_status="x", s3_cp=_gold, s4_cp=_gold, s4_status="x")
+            check("proof: after activation the stamped owner and a consumer stamped after it validate clean",
+                  _pf_classes(), [])
+            _pf_write_todo(s1_cp=_gold, s3_status="x")
+            check("proof: after activation an unrelated section may cite the landed proof", _pf_classes(), [])
+            _back, _m = _lib_tg.deactivate_proof_markers(_act, "D00 T07 §3")
+            check("proof: an unstamp of the owner restores its markers",
+                  (_m, _back.count("unusable for a stamp until `D00 T07 §3` lands"), "(landed in `D00 T07 §3`)" in _back),
+                  (2, 2, False))
+            _pf_write_readme()
+            _pf_write_todo()
             # Naming an unusable proof only inside 'Cheaper substitute that fails:' is allowed.
             _pf_write_todo(
                 s1_cp="Unit test: `BuildInfo.BuildIdShape` passes through CTest. "

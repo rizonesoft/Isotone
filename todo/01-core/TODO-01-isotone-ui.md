@@ -39,6 +39,10 @@ track: C1
 - -> XREF: D03 T01 §3 -- the WPF-UI removal that must land before Gesso consumes this library's dialogs
 - -> XREF: D06 T02 §1 -- the architecture page that documents this library once §2 lands
 - -> XREF: D01 T05 §4 -- the shared AI surfaces (send preview, AI settings page) built on §3's theme
+- -> XREF: D01 T14 §1 -- the runtime theming foundation (`D00 T07 §3`): §3's re-plan consumes its generated token tables and resolution
+- -> XREF: D01 T15 §1 -- the window foundation (`D00 T07 §3`): §7's re-plan builds the product title bar on its mechanism
+- -> XREF: D01 T23 §1 -- the docking foundation (`D00 T07 §3`): §8's re-plan builds the dock theme on its float-and-redock mechanism
+- -> XREF: D01 T25 §1 -- the goldens foundation (`D00 T07 §3`) owns the render environment, the compare and approve paths, and the repeatability proof; §9's re-plan keeps only the per-control goldens that use them
 - -> XREF: D02 T09 §2 -- the Stilus color picker and the swatch-well, checkerboard, and gamut-warning tokens it adds to §3's theme; the picker moves here when Gesso's color panel (`D03 T03 §8`) needs it
 - -> XREF: D02 T16 §6 -- the Appearance page that binds §3's ThemeService, HighlightService, and DensityService and persists their keys, and the error-reporting toggle that governs §2's exception window; its Windows 11 chrome item consumes §7's title bar
 - -> XREF: D02 T16 §1 -- the Stilus workspace frame whose dock consumes §8's AvalonDock theme

@@ -38,6 +38,7 @@ track: C2
 - -> XREF: D01 T03 §1 -- the pixel engine, built in `Isotone.Core/Imaging/` on §1's project and §2's settings
 - -> XREF: D01 T04 §1 -- the color-management engine, built in `Isotone.Core/Color/` on §1's project with its defaults in §2's store
 - -> XREF: D01 T05 §1 -- the AI core, logging through §1, keeping model choices in §2, and recording applies into §4's history
+- -> XREF: D01 T19 §1 -- the document safety foundation (`D00 T07 §3`) owns the save sequence; §5's re-plan consumes it rather than a second writer
 - -> XREF: D02 T07 §13 -- the History panel that reads §4's suite history
 - -> XREF: D02 T08 §1 -- the drawing tools whose defaults go through §2's settings store
 - -> XREF: D02 T09 §1 -- the color model whose `stilus.*` keys write through §2 and whose commands record into §4

@@ -1202,6 +1202,57 @@ def review_rounds(root=ROOT):
     }
 
 
+PROOF_HEADING = "## Proof: what a Test checkpoint may cite"
+RUNNER_COMMAND_RE = re.compile(r"\brunner command `([^`]+)`")
+
+
+def _proof_table_lines(lines):
+    """Indexes of the table lines under todo/README.md's proof heading."""
+    inside = False
+    for i, line in enumerate(lines):
+        if line.strip() == PROOF_HEADING:
+            inside = True
+            continue
+        if inside and line.startswith("## "):
+            return
+        if inside and line.lstrip().startswith("|"):
+            yield i
+
+
+def activate_proof_markers(readme_text, ref, section_body):
+    """D00 T07 §3: at the stamp of `ref`, rewrite every proof-table marker
+    `unusable for a stamp until <ref> lands` to the runner command the section's
+    activation item names (an item reading `... the runner command `<command>` ...`).
+    Returns (text, rewritten). Refuses when a marker names `ref` and the section's
+    items name no runner command, or more than one."""
+    marker = re.compile(r"unusable for a stamp until `?" + re.escape(ref) + r"`? lands(?:\s*\([^()]+\))?")
+    lines = readme_text.split("\n")
+    hits = [i for i in _proof_table_lines(lines) if marker.search(lines[i])]
+    if not hits:
+        return readme_text, 0
+    items = "\n".join(re.findall(r"^\s*- \[[ x]\] .*$", section_body, re.M))
+    commands = sorted(set(RUNNER_COMMAND_RE.findall(items)))
+    require(
+        len(commands) == 1,
+        f"todo/README.md marks a proof unusable until {ref} lands, so its stamp activates that proof, but the "
+        f"section's items name {len(commands)} runner commands; name exactly one as `the runner command `<command>``",
+    )
+    for i in hits:
+        lines[i] = marker.sub(lambda _m: f"`{commands[0]}` (landed in `{ref}`)", lines[i])
+    return "\n".join(lines), len(hits)
+
+
+def deactivate_proof_markers(readme_text, ref):
+    """The reverse of activate_proof_markers, for an unstamp of `ref`: the proof is unusable again."""
+    landed = re.compile(r"`[^`]+` \(landed in `" + re.escape(ref) + r"`\)")
+    lines = readme_text.split("\n")
+    count = 0
+    for i in _proof_table_lines(lines):
+        lines[i], n = landed.subn(f"unusable for a stamp until `{ref}` lands", lines[i])
+        count += n
+    return "\n".join(lines), count
+
+
 def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=None, completion=None, plan=None):
     """Close a section: write its JSON receipt, tick its row and Commit item, add Verified and Review lines,
     validate the tree, and sync `todo/implementation-plan.md`."""
@@ -1330,13 +1381,22 @@ def stamp(root, ref, sha, reviews, checks, date, sync_plan=False, cap_outcome=No
         text, n = re.subn(r"\A(---\n(?:.*\n)*?)status: [a-z]+\n", r"\1status: done\n", text, count=1)
         require(n == 1, f"frontmatter status not found: {row.path}")
 
+    readme_path = root / "todo" / "README.md"
+    readme_text = None
+    if readme_path.is_file():
+        activated, rewritten = activate_proof_markers(read_text(readme_path), ref, sec_block)
+        if rewritten:
+            readme_text = activated
+
     saved_Side = {
         p: (p.read_bytes() if p.is_file() else None)
-        for p in (plan_path, progress_path, operator_path)
+        for p in (plan_path, progress_path, operator_path, readme_path)
     }
     try:
         atomic(receipt_path, json.dumps(data, indent=2) + "\n")
         atomic(path, text)
+        if readme_text is not None:
+            atomic(readme_path, readme_text)
         _validate_and_sync(root, sync_plan=bool(sync_plan or plan_path.is_file()))
     except BaseException:
         if receipt_before is None:
@@ -1501,11 +1561,19 @@ def unstamp(root, ref, reason, date):
     plan_path = root / PLAN
     progress_path = root / "build" / "todo-progress.json"
     operator_path = root / "build" / "todo-operator.json"
+    readme_path = root / "todo" / "README.md"
+    readme_text = None
+    if readme_path.is_file():
+        restored, count = deactivate_proof_markers(read_text(readme_path), ref)
+        if count:
+            readme_text = restored
     saved_side = {
         p: (p.read_bytes() if p.is_file() else None)
-        for p in (plan_path, progress_path, operator_path)
+        for p in (plan_path, progress_path, operator_path, readme_path)
     }
     try:
+        if readme_text is not None:
+            atomic(readme_path, readme_text)
         atomic(revoked_path, receipt_bytes)
         for _, dst_fp, fbytes in sidecar_archives:
             atomic(dst_fp, fbytes)

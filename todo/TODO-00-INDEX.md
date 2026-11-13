@@ -43,8 +43,19 @@ The Phase column is the coarse domain grouping, not an executable schedule. Curr
 | TODO | Domain | Title |
 | ---- | ------ | ----- |
 | [TODO-07](./00-workspace/TODO-07-native-replan.md) | 00-workspace | The Native Re-plan, Phase by Phase |
-| [TODO-01](./02-stilus/TODO-01-stilus-structure.md) | 02-stilus | Stilus Layout, Names, and Composition Root |
-| [TODO-01](./03-gesso/TODO-01-gesso-structure.md) | 03-gesso | Gesso Layout, Names, the Snapshot Port, and WPF-UI Removal |
+| [TODO-14](./01-core/TODO-14-foundation-theming.md) | 01-core | Foundation: Runtime Theming from the Design Tokens |
+| [TODO-15](./01-core/TODO-15-foundation-window.md) | 01-core | Foundation: a Window with the Isotone Title Bar on the Swap Chain and Partial-Redraw Contract |
+| [TODO-16](./01-core/TODO-16-foundation-device-loss.md) | 01-core | Foundation: Device-Loss Recovery and the WARP Fallback |
+| [TODO-17](./01-core/TODO-17-foundation-display-color.md) | 01-core | Foundation: the Display Color Pipeline in SDR, Advanced Color SDR, and HDR |
+| [TODO-18](./01-core/TODO-18-foundation-tasks.md) | 01-core | Foundation: the Task System and Threading |
+| [TODO-19](./01-core/TODO-19-foundation-document-safety.md) | 01-core | Foundation: Document Safety -- the Save Sequence, Secondary Copies, Checkpoints, and Recovery |
+| [TODO-20](./01-core/TODO-20-foundation-localization.md) | 01-core | Foundation: Localization Services |
+| [TODO-21](./01-core/TODO-21-foundation-text.md) | 01-core | Foundation: the Text Editing Model with the Text Services Framework |
+| [TODO-22](./01-core/TODO-22-foundation-accessibility.md) | 01-core | Foundation: UI Automation, the Driven-Input Runner, and the Screen Reader Scenarios |
+| [TODO-23](./01-core/TODO-23-foundation-docking.md) | 01-core | Foundation: a Docked Panel That Floats and Redocks |
+| [TODO-24](./01-core/TODO-24-foundation-canvas.md) | 01-core | Foundation: the GPU Canvas Meeting the Frame Cadence and Pen Latency Goals |
+| [TODO-25](./01-core/TODO-25-foundation-goldens.md) | 01-core | Foundation: the Goldens Environment and Its Repeatability Proof |
+| [TODO-26](./01-core/TODO-26-foundation-crash-diagnostics.md) | 01-core | Foundation: Crash Diagnostics by an Out-of-Process Watcher |
 | [TODO-01](./07-tinctura/TODO-01-tinctura-plan.md) | 07-tinctura | Tinctura: Plan the Color Picker and Color Studio App |
 | [TODO-01](./08-capio/TODO-01-capio-plan.md) | 08-capio | Capio: Plan the Screenshots and Screen Recording App |
 | [TODO-01](./09-folium/TODO-01-folium-plan.md) | 09-folium | Folium: Plan the Page Layout and Publishing App |

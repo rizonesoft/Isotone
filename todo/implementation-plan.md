@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **41 of 840 sections complete (5%).** 840 sections (7 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **41 of 865 sections complete (5%).** 865 sections (7 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -43,15 +43,15 @@ The finished suite is **three standalone creative applications that behave like 
 | Every clone refuses a broken plan | `D00 T01 §1` (hook) · `D00 T01 §5` (CI read back) |
 | Operator-only work never stalls a runner | `D00 T01 §2` · `D99 T01 §1`-`§10` |
 | The review panel works before the first stamp | `D00 T01 §4` |
-| No quarantined test, no excused warning | `D00 T05 §3` · `D00 T02 §2` · `D02 T01 §7` |
+| No quarantined test, no excused warning | `D00 T05 §3` · `D00 T02 §2` |
 | No dependency without a reason and a license | `D00 T02 §4` · `D00 T04 §1` · `D00 T04 §2` · `D02 T02 §2` · `D03 T04 §1` · `D04 T01 §3` · `D01 T04 §1` · `D02 T10 §1` · `D02 T13 §14` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §10` · `D03 T15 §5` · `D03 T17 §5` · `D03 T17 §6` · `D03 T17 §7` · `D03 T12 §4` · `D01 T08 §2` · `D01 T09 §1` · `D02 T18 §1` · `D02 T13 §17` · `D03 T14 §13` · `D04 T10 §2` · `D04 T08 §6` · `D04 T08 §7` · `D04 T13 §4` · `D04 T07 §7` · `D04 T12 §8` · `D04 T12 §9` · `D04 T12 §11` · `D00 T03 §3` · `D01 T10 §4` · `D01 T10 §5` · `D01 T10 §6` · `D01 T11 §1` · `D01 T11 §2` · `D01 T12 §1` · `D01 T12 §2` · `D04 T13 §9` · `D04 T13 §10` · `D04 T13 §11` |
-| Every surface implements the design 1:1 and is held to it by gates | `D00 T01 §9` (Design line, design-lint, reference renders) · `D01 T01 §9` (visual regression and goldens) · `D00 T03 §2` (before record) |
-| The apps carry their own names | `D02 T01 §1` · `D03 T01 §1` · `D03 T01 §4` · `D00 T03 §3` |
-| One composition root per app, logging to disk | `D01 T02 §1` · `D02 T01 §2` · `D02 T01 §3` · `D03 T01 §5` · `D04 T01 §2` |
+| Every surface implements the design 1:1 and is held to it by gates | `D00 T01 §9` (Design line, design-lint, reference renders) · `D01 T25 §1`-`§3` (the goldens environment, compare and approve, repeatability) · `D01 T01 §9` (per-control goldens) · `D00 T03 §2` (before record) |
+| The apps carry their own names | `D00 T03 §3` · `D00 T07 §4` (the Stilus native skeleton) · `D00 T07 §16` (the Gesso native skeleton) |
+| One composition root per app, logging to disk | `D01 T02 §1` · `D00 T07 §4` (the Stilus native skeleton) · `D00 T07 §16` (the Gesso native skeleton) · `D04 T01 §2` |
 | Shared once, never copied | `D01 T01 §1`-`§4` (Isotone.UI) · `D01 T02 §1`-`§5` (Isotone.Core) · `D01 T03 §1` · `D01 T04 §1` · `D01 T05 §1` · `D01 T06 §1` · `D01 T07 §1` · `D03 T16 §1` · `D03 T16 §5` · `D03 T17 §2` · `D03 T18 §6` · `D01 T08 §1` · `D01 T09 §1` · `D03 T10 §6` · `D03 T13 §3` · `D04 T13 §1` · `D04 T13 §6` · `D04 T09 §16` · `D04 T10 §7` · `D04 T10 §8` · `D04 T12 §6` · `D01 T07 §9` · `D01 T10 §1` · `D01 T10 §4` · `D01 T10 §9` · `D01 T11 §1` · `D01 T12 §1` · `D01 T07 §10` · `D04 T13 §9` |
 | Every edit has a reverse | `D02 T03 §1` · `D02 T03 §4` · `D01 T02 §4` · `D03 T03 §2` · `D04 T02 §1` · `D04 T05 §6` · `D04 T11 §3` · `D01 T10 §1` · `D01 T10 §4` |
-| Saves never damage the user's file | `D02 T04 §1` · `D01 T02 §5` · `D03 T04 §2` |
-| A crash loses nothing | `D02 T04 §5` · `D03 T04 §6` |
+| Saves never damage the user's file | `D01 T19 §1`-`§2` · `D01 T19 §6` · `D02 T04 §1` · `D01 T02 §5` · `D03 T04 §2` |
+| A crash loses nothing | `D01 T19 §3`-`§6` · `D01 T26 §1`-`§2` · `D02 T04 §5` · `D03 T04 §6` |
 | Formats are proven, not assumed | `D02 T04 §2` · `D03 T02 §4` · `D03 T04 §2`-`§5` · `D04 T01 §4` · `D04 T02 §2` · `D02 T14 §2` · `D02 T14 §6` · `D02 T14 §12` · `D03 T17 §2` · `D03 T17 §4` · `D03 T17 §5` · `D03 T17 §6` · `D01 T08 §1` · `D02 T18 §8` · `D04 T13 §1` · `D04 T13 §2` · `D04 T13 §3` · `D04 T13 §4` · `D04 T13 §6` · `D04 T13 §7` · `D04 T13 §8` · `D04 T08 §9` · `D01 T11 §3` · `D03 T23 §5` · `D04 T13 §9` · `D04 T13 §10` · `D04 T13 §11` · `D04 T13 §12` |
 | No menu item silently does nothing | `D02 T03 §5` · `D03 T06 §2` |
 | A user of the reference program finds every menu, tool, panel, and button where they expect it (operator requests 2026-10-22) | `D01 T13 §1` · `D02 T03 §6` · `D03 T06 §4` · `D04 T01 §12` |
@@ -199,17 +199,55 @@ Nothing in this plan can be proven until the gates run on every clone and every 
 > **Superseded:** `D00 T02 §5` -- The assertion library decision and the decision log (lapsed with todo/00-workspace/TODO-02-build-and-test-debt.md, superseded by todo/00-workspace/TODO-06-retire-csharp.md)
 > **Superseded:** `D00 T02 §7` -- Release pipeline dry run as a draft release (lapsed with todo/00-workspace/TODO-02-build-and-test-debt.md, superseded by todo/00-workspace/TODO-06-retire-csharp.md)
 
-### Phase 1 -- Suite layout and names
+### Phase 1 -- Native foundations and suite layout
 
-Every later section names files, so both imported apps move into the suite layout and take their Isotone names before anything else is written against their paths: Bezier becomes `Isotone.Stilus` and ships `Stilus.exe`, Gesso becomes `Isotone.Gesso`, and Gesso gets its icon. The icon rasters come first: the operator chose the icon design on 2026-09-27 (Direction C, SVG sources in `resources/icons/`), and `D00 T03 §3` generates every PNG and ICO for all three apps from those sources with a check that keeps them in step, so each rename wires the generated files instead of sourcing icon art of its own. The renames change names only, so they are cheap to review and keep git history intact.
+Every later phase builds on the native stack's foundations, so this phase proves them first, each in the one shared foundation test host with placeholder menus and panels (`docs/specs/2026-10-22-native-stack-design.md`, "The order of work" step 2): runtime theming from `docs/design/tokens.json`, a window with the Isotone title bar on the swap chain and partial-redraw contract, device loss and the WARP fallback, the display color pipeline in SDR, Advanced Color SDR, and HDR, the task system and threading, document safety, localization services, the text editing model with TSF, UI Automation with the driven-input runner and the screen reader scenarios, a docked panel that floats and redocks, the GPU canvas meeting the frame cadence and pen latency goals, the goldens environment with its repeatability proof, and crash diagnostics. `D00 T07 §3` authored them, so every entry section waits on its stamp, and a foundation that cannot meet its bar sends the spec back for revision. The icon rasters (`D00 T03 §3`) are exported from the SVG sources the operator chose on 2026-09-27 (Direction C), so each app's native skeleton wires the generated files. The C# structure files (`D02 T01`, `D03 T01`) lapsed with the C# code; what survives of them goes to the Stilus and Gesso native skeletons that `D00 T07 §4` and `§16` author.
 
-|  ✔  | Section      | Deliverable                                                  | Items |
-| :-: | ------------ | ------------------------------------------------------------ | :---: |
-| [ ] | `D00 T07 §3` | Author the native foundations and settle the structure files |  10   |
-| [x] | `D00 T03 §3` | Export the app icon rasters from the SVG sources             |  16   |
-| [ ] | `D02 T01 §1` | Rename Bezier to Isotone.Stilus                              |  10   |
-| [ ] | `D03 T01 §1` | Restructure and rename Gesso to Isotone.Gesso                |   7   |
-| [ ] | `D03 T01 §4` | The Gesso icon                                               |   5   |
+|  ✔  | Section      | Deliverable                                                                                         | Items |
+| :-: | ------------ | --------------------------------------------------------------------------------------------------- | :---: |
+| [ ] | `D00 T07 §3` | Author the native foundations and settle the structure files                                        |  10   |
+| [ ] | `D01 T14 §1` | The isotone::ui Library and the Generated Token Tables                                              |   6   |
+| [ ] | `D01 T15 §1` | The Window, DPI Layout, and the Foundation Test Host                                                |   5   |
+| [ ] | `D01 T15 §2` | The Renderer: Device, Visuals, Flip-Sequential Swap Chains, and Partial Redraw                      |   5   |
+| [ ] | `D01 T14 §2` | Run-Time Resolution and Live Switching, Proved in the Host                                          |   5   |
+| [ ] | `D01 T15 §3` | The Isotone Title Bar with the Menu Bar, and Snap Layouts                                           |   5   |
+| [ ] | `D01 T16 §1` | Rebuild on Device Removal, Reset, and Recreate-Target                                               |   4   |
+| [ ] | `D01 T16 §2` | The WARP Fallback with a Notice                                                                     |   4   |
+| [ ] | `D01 T17 §1` | Reading Each Monitor's Color Mode and Following Its Changes                                         |   4   |
+| [ ] | `D01 T17 §2` | The SDR Path: 8-bit Swap Chain and ICC Conversion with LittleCMS                                    |   3   |
+| [ ] | `D01 T17 §3` | Advanced Color SDR and HDR: FP16 scRGB, White Levels, and the EETF                                  |   5   |
+| [ ] | `D01 T18 §1` | The Thread Pool in Three Cancellable Priority Classes                                               |   4   |
+| [ ] | `D01 T18 §2` | The Render Thread, Immutable Snapshots, and the Bounded GPU Queue                                   |   4   |
+| [ ] | `D01 T18 §3` | Version-Checked Results and Weak Document References                                                |   2   |
+| [ ] | `D01 T19 §1` | The Save Sequence, Designed, Reviewed, and Journaled                                                |   6   |
+| [ ] | `D01 T19 §2` | The File Identity Contract                                                                          |   4   |
+| [ ] | `D01 T19 §3` | Encrypted Secondary Copies                                                                          |   3   |
+| [ ] | `D01 T19 §4` | Checkpoints and Retirement                                                                          |   4   |
+| [ ] | `D01 T19 §5` | Recovery at the Next Start                                                                          |   4   |
+| [ ] | `D01 T19 §6` | The Kill-Test Proofs                                                                                |   4   |
+| [ ] | `D01 T20 §1` | Messages, Plurals, and Locale Formatting through icu.dll                                            |   4   |
+| [ ] | `D01 T22 §1` | The UI Automation Provider for Every Element                                                        |   3   |
+| [ ] | `D01 T20 §2` | Right-to-Left Mirroring, Mnemonics, and Shortcuts That Survive Translation                          |   3   |
+| [ ] | `D01 T20 §3` | The Pseudo-Localization Build in the Gates                                                          |   4   |
+| [ ] | `D01 T21 §1` | The Text Model: Clusters, Bidirectional Caret and Selection, Undo Grouping, and Fallback            |   4   |
+| [ ] | `D01 T21 §2` | The TSF Text Store                                                                                  |   3   |
+| [ ] | `D01 T22 §2` | The Driven-Input Runner: UI Automation, SendInput, Synthetic Pointer Injection, and IME Composition |   4   |
+| [ ] | `D01 T22 §3` | The Narrator and NVDA Scenarios with Recorded Transcripts                                           |   3   |
+| [ ] | `D01 T21 §3` | The Text Proofs through Real IMEs and Scripts                                                       |   3   |
+| [ ] | `D01 T23 §1` | The Dock Layout: Columns, a Floating Window, and Its JSON                                           |   3   |
+| [ ] | `D01 T23 §2` | Float and Redock by Dragging, Proved with Real Pointer Input                                        |   3   |
+| [ ] | `D01 T24 §1` | The Canvas Visual, Its Swap Chain, and Pen Input with Every Sample                                  |   3   |
+| [ ] | `D01 T24 §2` | Measuring the Frame Cadence and Pen Latency Goals under Load                                        |   4   |
+| [ ] | `D01 T25 §1` | Offscreen Rendering on WARP in the Pinned Environment                                               |   3   |
+| [ ] | `D01 T25 §2` | Compare and Approve, in the Gates                                                                   |   4   |
+| [ ] | `D01 T25 §3` | The Repeatability Proof                                                                             |   2   |
+| [ ] | `D01 T26 §1` | The Watcher and Encrypted Minidumps                                                                 |   4   |
+| [ ] | `D01 T26 §2` | Sending a Report, the WER Exclusion, Symbols, and the Crash Proofs                                  |   4   |
+| [x] | `D00 T03 §3` | Export the app icon rasters from the SVG sources                                                    |  16   |
+
+> **Superseded:** `D02 T01 §1` -- Rename Bezier to Isotone.Stilus (lapsed with todo/02-stilus/TODO-01-stilus-structure.md, superseded by todo/00-workspace/TODO-07-native-replan.md)
+> **Superseded:** `D03 T01 §1` -- Restructure and rename Gesso to Isotone.Gesso (lapsed with todo/03-gesso/TODO-01-gesso-structure.md, superseded by todo/00-workspace/TODO-07-native-replan.md)
+> **Superseded:** `D03 T01 §4` -- The Gesso icon (lapsed with todo/03-gesso/TODO-01-gesso-structure.md, superseded by todo/00-workspace/TODO-07-native-replan.md)
 
 ### Phase 2 -- Stilus foundation: composition, hygiene, triage, correctness
 
@@ -217,26 +255,27 @@ Stilus goes first among the apps. This phase gives it a real composition root on
 
 |  ✔  | Section      | Deliverable                                                                   | Items |
 | :-: | ------------ | ----------------------------------------------------------------------------- | :---: |
-| [ ] | `D00 T07 §4` | Re-plan Phase 2: Stilus foundation: composition, hygiene, triage, correctness |  13   |
+| [ ] | `D00 T07 §4` | Re-plan Phase 2: Stilus foundation: composition, hygiene, triage, correctness |  14   |
 | [ ] | `D01 T13 §1` | The layout-map format and the binding rule                                    |   7   |
 | [ ] | `D01 T13 §2` | The layout-map checker                                                        |   5   |
 | [ ] | `D01 T13 §7` | Every layout section cites its map                                            |   4   |
 | [ ] | `D01 T13 §3` | The Stilus map from a driven Illustrator run                                  |   6   |
 | [ ] | `D01 T02 §1` | Create Isotone.Core with app-data paths and logging                           |   7   |
 | [ ] | `D01 T02 §2` | The settings store                                                            |   6   |
-| [ ] | `D02 T01 §2` | Composition root on the Generic Host                                          |   5   |
-| [ ] | `D02 T01 §3` | The debug console reads the Serilog pipeline                                  |   5   |
-| [ ] | `D02 T01 §4` | Culture-safe formatting and comparisons                                       |   5   |
-| [ ] | `D02 T01 §5` | The rest of the analyzer backlog                                              |   4   |
 | [ ] | `D02 T02 §1` | The triage record and the delete group                                        |   4   |
 | [ ] | `D02 T02 §2` | One SVG render path                                                           |   7   |
-| [ ] | `D02 T01 §6` | SkiaSharp 4                                                                   |   6   |
-| [ ] | `D02 T01 §7` | Warnings are errors in Stilus                                                 |   4   |
 | [ ] | `D02 T02 §3` | Selection has one owner                                                       |   5   |
 | [ ] | `D02 T03 §1` | Undo for resize and rotate                                                    |   8   |
 | [ ] | `D02 T03 §2` | Split the main window view model                                              |   7   |
 | [ ] | `D02 T04 §1` | Atomic save and dirty tracking                                                |   9   |
 | [ ] | `D02 T04 §2` | SVG round-trip fidelity fixtures                                              |  14   |
+
+> **Superseded:** `D02 T01 §2` -- Composition root on the Generic Host (lapsed with todo/02-stilus/TODO-01-stilus-structure.md, superseded by todo/00-workspace/TODO-07-native-replan.md)
+> **Superseded:** `D02 T01 §3` -- The debug console reads the Serilog pipeline (lapsed with todo/02-stilus/TODO-01-stilus-structure.md, superseded by todo/00-workspace/TODO-07-native-replan.md)
+> **Superseded:** `D02 T01 §4` -- Culture-safe formatting and comparisons (lapsed with todo/02-stilus/TODO-01-stilus-structure.md, superseded by todo/00-workspace/TODO-07-native-replan.md)
+> **Superseded:** `D02 T01 §5` -- The rest of the analyzer backlog (lapsed with todo/02-stilus/TODO-01-stilus-structure.md, superseded by todo/00-workspace/TODO-07-native-replan.md)
+> **Superseded:** `D02 T01 §6` -- SkiaSharp 4 (lapsed with todo/02-stilus/TODO-01-stilus-structure.md, superseded by todo/00-workspace/TODO-07-native-replan.md)
+> **Superseded:** `D02 T01 §7` -- Warnings are errors in Stilus (lapsed with todo/02-stilus/TODO-01-stilus-structure.md, superseded by todo/00-workspace/TODO-07-native-replan.md)
 
 > **Superseded:** `D00 T02 §6` -- xUnit v3 (lapsed with todo/00-workspace/TODO-02-build-and-test-debt.md, superseded by todo/00-workspace/TODO-06-retire-csharp.md)
 
@@ -577,17 +616,18 @@ Gesso starts once Stilus has shipped `stilus-v1.0.0` at the end of the parity ph
 
 |  ✔  | Section       | Deliverable                                                                     | Items |
 | :-: | ------------- | ------------------------------------------------------------------------------- | :---: |
-| [ ] | `D00 T07 §16` | Re-plan Phase 14: Gesso foundation: snapshot port, WPF-UI out, tiles, rendering |   9   |
+| [ ] | `D00 T07 §16` | Re-plan Phase 14: Gesso foundation: snapshot port, WPF-UI out, tiles, rendering |  10   |
 | [ ] | `D01 T13 §4`  | The Gesso map from a driven Photoshop run                                       |   4   |
-| [ ] | `D03 T01 §2`  | Port the snapshot canvas, ruler, and container                                  |   8   |
-| [ ] | `D03 T01 §3`  | WPF-UI out of Gesso                                                             |   8   |
-| [ ] | `D03 T01 §5`  | Composition root on Isotone.Core                                                |   4   |
 | [ ] | `D03 T02 §1`  | The tiled image store                                                           |   6   |
 | [ ] | `D03 T02 §2`  | The viewport on the tiled document                                              |   6   |
 | [ ] | `D03 T02 §3`  | The render graph composites layers                                              |   4   |
 | [ ] | `D03 T02 §4`  | Blend modes with golden tests                                                   |   4   |
 | [ ] | `D03 T02 §5`  | The ComputeSharp compositing path with CPU parity                               |   5   |
 | [ ] | `D03 T04 §1`  | The codec decision                                                              |   4   |
+
+> **Superseded:** `D03 T01 §2` -- Port the snapshot canvas, ruler, and container (lapsed with todo/03-gesso/TODO-01-gesso-structure.md, superseded by todo/00-workspace/TODO-07-native-replan.md)
+> **Superseded:** `D03 T01 §3` -- WPF-UI out of Gesso (lapsed with todo/03-gesso/TODO-01-gesso-structure.md, superseded by todo/00-workspace/TODO-07-native-replan.md)
+> **Superseded:** `D03 T01 §5` -- Composition root on Isotone.Core (lapsed with todo/03-gesso/TODO-01-gesso-structure.md, superseded by todo/00-workspace/TODO-07-native-replan.md)
 
 ### Phase 15 -- Gesso 0.1.0: editing, files, filters, release
 

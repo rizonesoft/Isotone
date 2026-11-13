@@ -189,7 +189,7 @@ Every Adobe Photoshop 27.10 (with Camera Raw 18.6), Affinity by Canva 3.3 (Affin
 | IP-0123 | Power spectral density scope | -- | AF-2417, AF-2464 | -- | core | plan D03 T08 §11 |  |
 | IP-0124 | Status bar and title format: document sizes, profile, dimensions, scratch, efficiency, timing, custom title and status format | PS-B-1370 | -- | GP-4187 | core | plan D03 T08 §11 | extends D03 T03 §1 |
 | IP-0125 | Histogram, Info, and Measurement Log panels | PS-B-1346, PS-B-1348, PS-B-1351 | -- | -- | core | plan D03 T08 §11 |  |
-| IP-0126 | Rulers display toggle | PS-A-1676, PS-A-1741 | AF-2383 | GP-1056 | core | shipped-scope D03 T01 §2 |  |
+| IP-0126 | Rulers display toggle | PS-A-1676, PS-A-1741 | AF-2383 | GP-1056 | core | shipped-scope D00 T07 §16 | The rulers carry to the Gesso native skeleton D00 T07 §16 authors (D03 T01 superseded 2026-11-13) |
 | IP-0127 | Hand tool with Space temporary access | PS-A-0480 | AF-0377, AF-2401 | -- | core | shipped-scope D03 T03 §4 |  |
 | IP-0128 | Zoom tool: click, Alt or Ctrl reverse, drag rectangle | PS-A-0490 | AF-0378, AF-2396 | GP-0220, GP-0222, GP-0225 | core | shipped-scope D03 T03 §4 |  |
 

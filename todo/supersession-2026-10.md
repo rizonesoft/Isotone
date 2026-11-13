@@ -35,23 +35,23 @@ Generated from `python scripts/todo-graph.py query plan` on 2026-10-23 and edite
 | D00 T01 §5 | 0 | First push: CI green and read back | kept | stack-neutral; every item was ticked on the C# build and the section was never stamped, so it is kept with one open item that re-proves the acceptance on the `native` and `native-arm64-tests` jobs |
 | D00 T02 §7 | 0 | Release pipeline dry run as a draft release | superseded | superseded in D00 T06 §3; native release pipeline dry run moves to D05 T01 (re-planned in D00 T07 §5) |
 | D00 T03 §3 | 1 | Export the app icon rasters from the SVG sources | rewritten in place | settled by `D00 T07 §1` with the rest of its file; the export is kept for the six apps and the suite mark, its CI step moves to the `native` job, its packaging proof becomes a read of the installers' icon paths until `D00 T07 §5` re-plans packaging, and its dependency on the lapsed `D00 T02 §5` is dropped |
-| D02 T01 §1 | 1 | Rename Bezier to Isotone.Stilus | pending (W3) |  |
-| D03 T01 §1 | 1 | Restructure and rename Gesso to Isotone.Gesso | pending (W3) |  |
-| D03 T01 §4 | 1 | The Gesso icon | pending (W3) |  |
+| D02 T01 §1 | 1 | Rename Bezier to Isotone.Stilus | superseded | superseded in D00 T07 §3 with its file; the executable's name and icon go to the Stilus native skeleton D00 T07 §4 authors (`native/stilus/` builds `Stilus.exe` with `resources/icons/stilus/stilus.ico`) |
+| D03 T01 §1 | 1 | Restructure and rename Gesso to Isotone.Gesso | superseded | superseded in D00 T07 §3 with its file; nothing carries: the native app is born as `native/gesso/` building `Gesso.exe` in the Gesso native skeleton D00 T07 §16 authors |
+| D03 T01 §4 | 1 | The Gesso icon | superseded | superseded in D00 T07 §3 with its file; `Gesso.exe`'s resource script carries `resources/icons/gesso/gesso.ico` (exported by D00 T03 §3) in the Gesso native skeleton D00 T07 §16 authors |
 | D01 T13 §1 | 2 | The layout-map format and the binding rule | pending (W3) |  |
 | D01 T13 §2 | 2 | The layout-map checker | pending (W3) |  |
 | D01 T13 §7 | 2 | Every layout section cites its map | pending (W3) |  |
 | D01 T13 §3 | 2 | The Stilus map from a driven Illustrator run | pending (W3) |  |
 | D01 T02 §1 | 2 | Create Isotone.Core with app-data paths and logging | pending (W3) |  |
 | D01 T02 §2 | 2 | The settings store | pending (W3) |  |
-| D02 T01 §2 | 2 | Composition root on the Generic Host | pending (W3) |  |
-| D02 T01 §3 | 2 | The debug console reads the Serilog pipeline | pending (W3) |  |
-| D02 T01 §4 | 2 | Culture-safe formatting and comparisons | pending (W3) |  |
-| D02 T01 §5 | 2 | The rest of the analyzer backlog | pending (W3) |  |
+| D02 T01 §2 | 2 | Composition root on the Generic Host | superseded | superseded in D00 T07 §3 with its file; one composition root with logging and settings through `isotone::core` goes to the Stilus native skeleton D00 T07 §4 authors; the Generic Host has no native counterpart |
+| D02 T01 §3 | 2 | The debug console reads the Serilog pipeline | superseded | superseded in D00 T07 §3 with its file; the debug console (F12, the bounded ordered log buffer, its export, entries agreeing with the log file) and its driven proof go to the Stilus native skeleton D00 T07 §4 authors |
+| D02 T01 §4 | 2 | Culture-safe formatting and comparisons | superseded | superseded in D00 T07 §3 with its file; locale formatting, parsing, and collation go to the localization foundation D01 T20 §1 |
+| D02 T01 §5 | 2 | The rest of the analyzer backlog | superseded | superseded in D00 T07 §3 with its file; nothing carries: the native build holds `clang-tidy` and MSVC `/analyze` at zero findings from D00 T05 |
 | D02 T02 §1 | 2 | The triage record and the delete group | pending (W3) |  |
 | D02 T02 §2 | 2 | One SVG render path | pending (W3) |  |
-| D02 T01 §6 | 2 | SkiaSharp 4 | pending (W3) |  |
-| D02 T01 §7 | 2 | Warnings are errors in Stilus | pending (W3) |  |
+| D02 T01 §6 | 2 | SkiaSharp 4 | superseded | superseded in D00 T07 §3 with its file; nothing carries: the native stack draws with Direct2D and Direct3D |
+| D02 T01 §7 | 2 | Warnings are errors in Stilus | superseded | superseded in D00 T07 §3 with its file; the native build compiles with `/W4 /WX /permissive-` from D00 T05 |
 | D02 T02 §3 | 2 | Selection has one owner | pending (W3) |  |
 | D02 T03 §1 | 2 | Undo for resize and rotate | pending (W3) |  |
 | D02 T03 §2 | 2 | Split the main window view model | pending (W3) |  |
@@ -61,12 +61,12 @@ Generated from `python scripts/todo-graph.py query plan` on 2026-10-23 and edite
 | D01 T01 §1 | 3 | Create Isotone.UI with the icon catalog | pending (W3) |  |
 | D01 T13 §6 | 3 | The shared layout conformance test helpers | pending (W3) |  |
 | D01 T01 §2 | 3 | Splash, exception window, and glow move to Isotone.UI | pending (W3) |  |
-| D01 T01 §3 | 3 | The suite theme resources | pending (W3) |  |
-| D01 T01 §9 | 3 | The visual regression harness and goldens | pending (W3) |  |
+| D01 T01 §3 | 3 | The suite theme resources | pending (W3) | boundary for D00 T07 §5: the runtime theming foundation D01 T14 owns the generated token tables and resolution; this section consumes them |
+| D01 T01 §9 | 3 | The visual regression harness and goldens | pending (W3) | boundary for D00 T07 §5: the goldens foundation D01 T25 owns the render environment, the compare and approve paths, and the repeatability proof; this section keeps only the per-control goldens |
 | D01 T01 §5 | 3 | Implicit control styles: buttons and inputs | pending (W3) |  |
 | D01 T01 §6 | 3 | Implicit control styles: navigation, data, menus, and feedback | pending (W3) |  |
-| D01 T01 §7 | 3 | Shared window chrome: title bar and caption buttons | pending (W3) |  |
-| D01 T01 §8 | 3 | Shared window chrome: document tabs, dock theme, and status bar | pending (W3) |  |
+| D01 T01 §7 | 3 | Shared window chrome: title bar and caption buttons | pending (W3) | boundary for D00 T07 §5: the window foundation D01 T15 owns the title bar mechanism (WM_NCHITTEST, snap layouts, the menu bar inside it); this section builds the product chrome on it |
+| D01 T01 §8 | 3 | Shared window chrome: document tabs, dock theme, and status bar | pending (W3) | boundary for D00 T07 §5: the docking foundation D01 T23 owns float and redock; this section builds the dock theme on it |
 | D01 T02 §3 | 3 | Single instance and file-open forwarding | pending (W3) |  |
 | D02 T02 §4 | 3 | Arrange, align, distribute, rotate, and flip | pending (W3) |  |
 | D02 T02 §5 | 3 | Boolean path operations on SKPath.Op | pending (W3) |  |
@@ -91,7 +91,7 @@ Generated from `python scripts/todo-graph.py query plan` on 2026-10-23 and edite
 | D05 T01 §8 | 3 | Third-party notices in every package | pending (W8) |  |
 | D02 T05 §4 | 3 | Stilus 0.1.0 | pending (W3) |  |
 | D01 T02 §4 | 3 | One undo history for the suite | pending (W3) |  |
-| D01 T02 §5 | 3 | The atomic document writer moves to Isotone.Core | pending (W3) |  |
+| D01 T02 §5 | 3 | The atomic document writer moves to Isotone.Core | pending (W3) | boundary for D00 T07 §4: the document safety foundation D01 T19 owns the save sequence; this section consumes it rather than a second writer |
 | D02 T06 §7 | 4 | Documents in tabs, saved layouts, nested layers | pending (W4) |  |
 | D02 T07 §1 | 4 | The live-object contract in the stilus namespace | pending (W4) |  |
 | D02 T07 §2 | 4 | Spatial index, culling, and dirty-region rendering | pending (W4) |  |
@@ -301,9 +301,9 @@ Generated from `python scripts/todo-graph.py query plan` on 2026-10-23 and edite
 | D02 T06 §17 | 13 | Accessibility and localization | pending (W4) |  |
 | D02 T17 §10 | 13 | Stilus 1.0.0 (Phase 13) | pending (W4) |  |
 | D01 T13 §4 | 14 | The Gesso map from a driven Photoshop run | pending (W5) |  |
-| D03 T01 §2 | 14 | Port the snapshot canvas, ruler, and container | pending (W5) |  |
-| D03 T01 §3 | 14 | WPF-UI out of Gesso | pending (W5) |  |
-| D03 T01 §5 | 14 | Composition root on Isotone.Core | pending (W5) |  |
+| D03 T01 §2 | 14 | Port the snapshot canvas, ruler, and container | superseded | superseded in D00 T07 §3 with its file; the canvas with pan, zoom, and the pixel grid, the rulers, and the canvas container go to the Gesso native skeleton D00 T07 §16 authors on the GPU canvas foundation D01 T24, built from the design because the snapshot branch is gone |
+| D03 T01 §3 | 14 | WPF-UI out of Gesso | superseded | superseded in D00 T07 §3 with its file; nothing carries: no native code links WPF-UI |
+| D03 T01 §5 | 14 | Composition root on Isotone.Core | superseded | superseded in D00 T07 §3 with its file; one composition root with logging and settings through `isotone::core` goes to the Gesso native skeleton D00 T07 §16 authors |
 | D03 T02 §1 | 14 | The tiled image store | pending (W5) |  |
 | D03 T02 §2 | 14 | The viewport on the tiled document | pending (W5) |  |
 | D03 T02 §3 | 14 | The render graph composites layers | pending (W5) |  |
