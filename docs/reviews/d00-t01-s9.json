@@ -1,0 +1,88 @@
+{
+  "ref": "D00 T01 \u00a79",
+  "title": "The Design Contract Gates: the Design Line, design-lint, and the Reference Renders",
+  "implementation_sha": "4c50f408e5bcc127d27408b180bde5da4dd463ec",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T01-s9.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python scripts/todo-graph.py self-test -> 1037 cases, 0 failed; python scripts/design-lint.py --self-test -> 35 cases, 0 failed; python scripts/tests/test_render_design_reference.py -> Ran 19 tests, OK",
+    "python scripts/design-lint.py --baseline docs/design/.lint-baseline.json -> exit 0, 0 new, 0 stale; in a scratch clone: exit 1 naming native/ui/probe.cpp and color-api with the probe, and --base HEAD~1 exit 1 naming the unrecorded baseline entry on the probe commit",
+    "python scripts/todo-graph.py validate -> exit 0, 0 fatal, 0 warnings; exit 1 naming the missing Design line with one removed in a scratch clone",
+    "python scripts/render-design-reference.py -> 256 reference(s), 0 failure(s); --components Button -> 8 reference(s); gh run download 43334663964 -n design-reference -> exit 0, and --verify on the downloaded artifact -> 256 render(s) owed, 0 problem(s)",
+    ".github/workflows/build.yml on 4c50f408e5bc -> success https://github.com/rizonesoft/Isotone/actions/runs/43334663964",
+    ".github/workflows/plan.yml on 4c50f408e5bc -> success https://github.com/rizonesoft/Isotone/actions/runs/43334663943"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T01-s9.md",
+    "verdict": "reconciled",
+    "candidate": "4c50f408e5bcc127d27408b180bde5da4dd463ec",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T01-s9.md",
+    "candidate": "744f4fd34834c3707e8c1212b4b490ad27f39dad",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "744f4fd34834c3707e8c1212b4b490ad27f39dad",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "consistency",
+          "integration",
+          "quality",
+          "optimization",
+          "source-defect",
+          "design"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 4,
+  "pass_cap": 33
+}
