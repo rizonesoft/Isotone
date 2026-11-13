@@ -28,7 +28,7 @@ Each app has one folder, `resources/icons/<app>/`, where `<app>` is `stilus`, `g
 
 The small variants exist because the master's detail turns to mush below 40 px: each one redraws the tile and the glyph for its own pixel grid instead of scaling the master down.
 
-Raster output (PNG sizes and the multi-resolution `<app>.ico`) is generated from these SVGs, never drawn by hand. The export is planned as `D00 T03 §3`: one committed script renders every size, builds each ICO, and renders each `<app>-splash.svg` at 640 by 360, 960 by 540, and 1280 by 720 (`PNG/<app>_splash_{640,960,1280}.png`, for marketing only), and a check re-renders and compares, so a stale raster fails the gates.
+Raster output (PNG sizes and the multi-resolution `<app>.ico`) is generated from these SVGs, never drawn by hand (Raster output, below). The export, `D00 T03 §3`, is one committed script renders every size, builds each ICO, and renders each `<app>-splash.svg` at 640 by 360, 960 by 540, and 1280 by 720 (`PNG/<app>_splash_{640,960,1280}.png`, for marketing only), and a check re-renders and compares, so a stale raster fails the gates.
 
 ## Construction rules
 
@@ -39,7 +39,7 @@ Raster output (PNG sizes and the multi-resolution `<app>.ico`) is generated from
 - Every app icon file, the masters, the small variants, and the icon nested in each splash, is written by `scripts/build-app-icons.py` (resvg-py and Pillow) from one geometry: edit the script, never the SVGs, and run it with `--check` to prove the committed files match. The suite icon is written by `scripts/build-suite-mark.py`, its variants by `scripts/generate-small-icons.py`.
 - Every gradient and clip-path id is prefixed with the app and the direction, plus the size on small variants (`stilus-c-spec`, `stilus-c-s16-spec`, `stilus-sp-halo`), so the files can be inlined together in one document without id collisions.
 - Colors are literal hex values. The icon SVGs use no text, fonts, filters, or external references.
-- The splash SVGs (`viewBox="0 0 640 360"`) embed the app's master icon as a nested `<svg>` at 136 px (x 56, y 92) and set their text in Segoe UI Variable Display and Text, so a faithful render needs those fonts (installed on Windows 11). Their own ids are prefixed `<app>-sp-` (`stilus-sp-bg`, `stilus-sp-halo`, `stilus-sp-spec`); the nested icon keeps the master's ids, identical definitions, so a splash can be inlined beside its master. They use no filters.
+- The splash SVGs (`viewBox="0 0 640 360"`) embed the app's master icon as a nested `<svg>` at 136 px (x 56, y 92) and set their text in Segoe UI Variable Display and Text, so a faithful render needs that font (installed on Windows 11). Each text group names the named instance first, then the variable family with the instance's optical size (`font-family="Segoe UI Variable Display, Segoe UI Variable, ..."` with `font-variation-settings: 'opsz' 36`, and `'opsz' 10.5` for Text): a renderer that knows the named instance takes it, and one that sees only the variable family, as the export's renderer does, reaches the same design through the axis instead of falling back to plain Segoe UI (corrected 2026-11-13, when the export found the splash renders were in the fallback). Their own ids are prefixed `<app>-sp-` (`stilus-sp-bg`, `stilus-sp-halo`, `stilus-sp-spec`); the nested icon keeps the master's ids, identical definitions, so a splash can be inlined beside its master. They use no filters.
 
 ## License
 
@@ -47,9 +47,24 @@ Every file in this folder was created for the Isotone project on 2026-09-27 and 
 
 Copyright (C) 2025-2026 Rizonetech (Pty) Ltd. Rizonesoft is a brand of Rizonetech (Pty) Ltd. The GPL covers the files as artwork; the app icons also identify the official apps and are trademarks of Rizonetech (Pty) Ltd, so a modified version you distribute uses its own icons (see [`TRADEMARKS.md`](../../TRADEMARKS.md)).
 
+## Raster output
+
+`python scripts/export-icons.py` writes every raster; `python scripts/export-icons.py --check` re-renders them in memory and compares by decoded pixels, and fails on any file under `PNG/` it does not produce.
+
+| Output | Sizes | Rendered from |
+| ------ | ----- | ------------- |
+| `PNG/<app>_<n>.png` | 16, 20 | `<app>-16.svg` |
+| | 24, 30 | `<app>-24.svg` |
+| | 32, 36 | `<app>-32.svg` |
+| | 40, 48, 60, 64, 72, 80, 96, 128, 256, 512 | `<app>.svg` (the master) |
+| `PNG/<app>_splash_<w>.png` | 640 by 360, 960 by 540, 1280 by 720 | `<app>-splash.svg`, for marketing and as the reference for splash captures; no app loads them, and the suite icon has none |
+| `<app>.ico` | 16, 20, 24, 30, 32, 40, 48, 64, 128, 256 | each entry the committed PNG of its size, byte for byte |
+
+The same is made for the suite icon (`isotone/`), without a splash. Each PNG is 8-bit RGBA, rendered at its own size, never resampled from another.
+
 ## Old files and their status
 
-- `stilus/stilus.ico` and `stilus/PNG/stilus_{16,24,32,48,64,72,128,256,512}.png` are the old Stilus design, from before the Direction C decision. They stay until the export in `D00 T03 §3` regenerates them from the new SVGs, because `installer/Stilus.iss` and `installer/Suite.iss` reference `stilus/stilus.ico`. The export overwrites them in place under the same names.
+- `stilus/stilus.ico` and `stilus/PNG/stilus_{16,24,32,48,64,72,128,256,512}.png` were the old Stilus design, from before the Direction C decision; the export regenerated them in place under the same names on 2026-11-13.
 - `stilus/stilus.svg` was the old Stilus master and now holds the Direction C master.
-- `gesso/gesso.ico` and `albumen/albumen.ico` do not exist yet; `installer/Gesso.iss` and `installer/Albumen.iss` already point at those paths, and `D00 T03 §3` creates both.
+- Every app's `.ico` exists since the export of 2026-11-13, and the suite installer uses `isotone/isotone.ico`.
 - `stilus_512.png`, `art-and-design.png`, and `lens.png`, the earlier candidate art in this folder, were removed on 2026-09-27: the project-created icons above supersede them.

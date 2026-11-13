@@ -256,3 +256,14 @@ The cadence, binding on every runner from this entry on:
 - **CI is watched from every push, and red is fixed at once.** Operator, the same day: "Keeping that in mind, CI status and monitoring it is still important; a red CI should be detected early and fixed." Each push starts a background read of its workflows (`review_prompt.py ci-wait` for `plan-gates` and `build`, then `ci_watch.py`), so the next section starts without waiting. The moment a read reports red, the runner stops what it is building, diagnoses and repairs the failure at its owning layer, and only then carries on; a cancelled run is unread, not green, and is read again.
 
 What does not change: every Test checkpoint is still quoted from a real run, every stamp still needs its three review passes, and a red gate is still a defect to fix. Cost of changing: none to reverse (delete this entry and the Cadence paragraph of the gate card); the risk taken is a regression reaching `main` before CI names it, which the background read reports within one CI run of the push and which no stamp can cover, since the stamp cites the green run.
+
+## 2026-11-13: A GPL-compatible SVG renderer for the build-time icon export
+
+`D00 T03 §3` renders every icon raster from its SVG source at build time. The question: which SVG renderer, under a license that suits a GPL-3.0 repository, with no native install on a Windows host or runner.
+
+- **resvg-py** (MPL-2.0, over resvg, Apache-2.0 or MIT): a wheel with the renderer inside, no native install. It rendered every SVG in `resources/icons/` on 2026-09-27 and again on 2026-11-13, and it honors a variable font's axes (`font-variation-settings`), which the splash text needs.
+- **CairoSVG** (LGPL-3.0): needs a native Cairo on Windows, a second toolchain to keep.
+- **The Inkscape command line** (GPL-2.0 or later): a large install for one job, slower per file.
+- **ImageMagick**: delegates SVG to librsvg or its own MSVG renderer, whose fidelity varies by build.
+
+Chosen: resvg-py 0.5.0, with Pillow 12.3.0 to write the PNGs and fontTools 4.66.0 to read the font names, all pinned in `scripts/requirements-icons.txt`. They are build-time tools that never ship in an app, so they sit outside the dependency register `docs/dev/native-libraries.md`, which registers what the native apps link. Cost of change: one `render` function in `scripts/export-icons.py` and the test that renders independently in `scripts/tests/test_export_icons.py`; the committed rasters would be re-exported, and `--check` would name any pixel the new renderer draws differently.

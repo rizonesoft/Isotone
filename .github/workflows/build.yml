@@ -31,6 +31,24 @@ jobs:
           fetch-depth: 0
       # The design contract (standards/design-contract.md): no new design-lint
       # violation in the native UI sources.
+      # The icon rasters (D00 T03 §3): every raster under resources/icons/ is a fresh render of its SVG, and the
+      # SVGs are what their generators write. --require-fonts: the splash pixels are compared here, never skipped.
+      - name: Icon sources and rasters are current
+        shell: pwsh
+        run: |
+          # Each command's exit code is checked: a pwsh step otherwise fails only on its last command.
+          $steps = @(
+            @('-m', 'pip', 'install', '--disable-pip-version-check', '-q', '-r', 'scripts/requirements-icons.txt'),
+            @('scripts/build-app-icons.py', '--check'),
+            @('scripts/generate-small-icons.py', '--check'),
+            @('scripts/build-suite-mark.py', '--check'),
+            @('scripts/export-icons.py', '--check', '--require-fonts'),
+            @('scripts/tests/test_export_icons.py')
+          )
+          foreach ($argv in $steps) {
+            python -B @argv
+            if ($LASTEXITCODE -ne 0) { Write-Error "icon step failed: python $($argv -join ' ')"; exit $LASTEXITCODE }
+          }
       - name: Design lint self-test
         run: python -B scripts/design-lint.py --self-test
       # The baseline is compared with a trusted revision, never with the candidate itself: the commit before a

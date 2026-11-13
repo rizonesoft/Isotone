@@ -10,6 +10,7 @@ The wordmark stands alone: it is never locked up with the suite icon (operator d
 The letters are outlines of Sora (SIL Open Font License 1.1, resources/brand/fonts/), so the files never depend on an
 installed font. The three lights mix by the screen formula, precomputed per overlap, so no renderer needs blend modes.
 Usage: python scripts/build-suite-mark.py   (then python scripts/generate-small-icons.py --in-place for 16/24/32;
+       python scripts/build-suite-mark.py --check exits 1 naming each committed file that differs from what it writes;
 the three app icons are built by scripts/build-app-icons.py, on the same tile and band)
 Requires fonttools.
 """
@@ -133,8 +134,16 @@ def wordmark(ink, sub, x0=0.0, y0=0.0, align='center'):
     return frag, total_w, top_pad + 44 + 22 + 6
 
 
+CHECK = False
+STALE = []
+
+
 def write(rel, svg):
     p = os.path.join(ROOT, rel)
+    if CHECK:
+        if not os.path.exists(p) or open(p, encoding='utf-8').read() != svg:
+            STALE.append(rel)
+        return
     os.makedirs(os.path.dirname(p), exist_ok=True)
     with open(p, 'w', encoding='utf-8', newline='\n') as fh:
         fh.write(svg)
@@ -149,4 +158,13 @@ def main():
 
 
 if __name__ == '__main__':
+    import sys
+    if sys.argv[1:] not in ([], ['--check']):
+        sys.exit('usage: build-suite-mark.py [--check]')
+    CHECK = sys.argv[1:] == ['--check']
     main()
+    if CHECK:
+        for rel in STALE:
+            print(f'STALE {rel}: run python scripts/build-suite-mark.py')
+        print(f'suite mark: {len(STALE)} stale')
+        sys.exit(1 if STALE else 0)

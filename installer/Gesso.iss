@@ -2,8 +2,6 @@
 #define AppName "Gesso"
 #define AppExeName "Gesso.exe"
 #define AppIdGuid "E356E958-05F9-4F97-8537-77FA5B529BF4"
-; PLACEHOLDER: Gesso has no .ico yet (src/Gesso/src/Gesso.UI/Assets/gesso-icon.png
-; is an empty file). common.iss falls back to the default Setup icon until it exists.
 #define AppIcon AddBackslash(SourcePath) + "..\resources\icons\gesso\gesso.ico"
 
 #include "common.iss"

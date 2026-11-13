@@ -27,12 +27,12 @@
   <rect x="9" y="9" width="238" height="238" rx="51" fill="none" stroke="#FFFFFF" stroke-opacity=".12" stroke-width="2"/>
   <g transform="translate(128 116) scale(1.22) translate(-128 -116)"><circle cx="128" cy="116" r="66" fill="url(#albumen-c-ring)"/><circle cx="128" cy="116" r="56" fill="#0B0D10"/><path d="M147.05 105L183.13 125.83A56 56 0 0 1 147.05 168.66Z" fill="#5FD58C"/><path d="M147.05 127L147.05 168.66A56 56 0 0 1 91.92 158.83Z" fill="#38AE64"/><path d="M128 138L91.92 158.83A56 56 0 0 1 72.87 106.17Z" fill="#5FD58C"/><path d="M108.95 127L72.87 106.17A56 56 0 0 1 108.95 63.34Z" fill="#38AE64"/><path d="M108.95 105L108.95 63.34A56 56 0 0 1 164.08 73.17Z" fill="#5FD58C"/><path d="M128 94L164.08 73.17A56 56 0 0 1 183.13 125.83Z" fill="#38AE64"/><path d="M128 94L147.05 105L147.05 127L128 138L108.95 127L108.95 105Z" fill="#0B2414"/><path d="M84 92A50 50 0 0 1 116 66" fill="none" stroke="#FFFFFF" stroke-opacity=".55" stroke-width="3" stroke-linecap="round"/><circle cx="128" cy="116" r="65" fill="none" stroke="#FFFFFF" stroke-opacity=".18" stroke-width="2"/></g>
 </svg>
-<g font-family="Segoe UI Variable Display, Segoe UI, system-ui, sans-serif">
+<g font-family="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, system-ui, sans-serif" style="font-variation-settings: 'opsz' 36">
 <text x="228" y="148" font-size="46" font-weight="600" fill="#F4F4F5" letter-spacing="-0.5">Albumen</text>
 <text x="230" y="178" font-size="16" fill="#B7B8BD">Digital darkroom and photo manager</text>
 <text x="230" y="212" font-size="13" fill="#8C8D93">Isotone Graphics Suite<tspan fill="#6C6D73"> · </tspan>Version 0.1.0</text>
 </g>
-<g font-family="Segoe UI Variable Text, Segoe UI, system-ui, sans-serif">
+<g font-family="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, system-ui, sans-serif" style="font-variation-settings: 'opsz' 10.5">
 <text x="230" y="272" font-size="12" fill="#A3A4AA">Opening the catalog…</text>
 <rect x="230" y="284" width="340" height="3" rx="1.5" fill="#3A3B41"/>
 <rect x="230" y="284" width="146" height="3" rx="1.5" fill="#4CC47A"/>

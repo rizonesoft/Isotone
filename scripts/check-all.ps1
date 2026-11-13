@@ -11,7 +11,10 @@
   6. python scripts/todo-runs.py --check
   7. python scripts/campaign_guard.py --self-test
   8. python scripts/build-design-site.py --check (docs/design/index.html is current), then
-     python scripts/build-app-icons.py --check (the app icon SVGs match their generator)
+     python scripts/build-app-icons.py --check (the app icon SVGs match their generator), the same --check
+     of generate-small-icons.py and build-suite-mark.py (the suite icon), python scripts/export-icons.py --check
+     (every raster under resources/icons/ is a fresh render of its SVG, D00 T03 §3), and its test; each is a SKIP
+     with a warning when scripts/requirements-icons.txt is not installed
   9. python scripts/design-lint.py --self-test
   10. python scripts/design-lint.py --baseline docs/design/.lint-baseline.json, then the drift gate
       (D00 T01 §10): python scripts/drift-check.py --self-test, python scripts/drift-check.py (the tree
@@ -113,6 +116,21 @@ function Invoke-PythonGate([string]$Name, [string]$Script, [string[]]$Arguments)
   Invoke-Gate $Name ({ & $py $path @Arguments }.GetNewClosure())
 }
 
+# The icon generators need the packages in scripts/requirements-icons.txt; without them each icon gate is a SKIP with a
+# warning naming the file, not a failure, the same as a gate whose script is absent.
+function Invoke-IconGate([string]$Name, [string]$Script, [string[]]$Arguments) {
+  if ($null -eq $script:IconPackages) {
+    & $script:Python -c "import resvg_py, PIL, fontTools" *> $null
+    $script:IconPackages = ($LASTEXITCODE -eq 0)
+  }
+  if (-not $script:IconPackages) {
+    Write-Warning "check-all: resvg_py, PIL, or fontTools does not import; install scripts/requirements-icons.txt to run '$Name'"
+    $results.Add([pscustomobject]@{ Gate = $Name; Status = 'SKIP (scripts/requirements-icons.txt not installed)'; Seconds = 0 })
+    return
+  }
+  Invoke-PythonGate $Name $Script $Arguments
+}
+
 function Invoke-NativeGate([string]$Name, [string[]]$Command) {
   # The stage's full output goes to build/check-all/<stage>.log; a failing stage prints its last lines.
   $log = Join-Path $RepoRoot "build/check-all/$($Name -replace '[^\w-]+', '-').log"
@@ -128,6 +146,7 @@ function Invoke-InNative([string]$Name, [string]$Arch, [string]$Block) {
     '-Run', $Block)
 }
 
+$script:IconPackages = $null
 $script:Python = if (Get-Command python -ErrorAction SilentlyContinue) { 'python' } elseif (Get-Command python3 -ErrorAction SilentlyContinue) { 'python3' } else { $null }
 
 Push-Location $RepoRoot
@@ -141,7 +160,11 @@ try {
     Invoke-PythonGate 'todo-runs --check' 'todo-runs.py' @('--check')
     Invoke-PythonGate 'campaign_guard self-test' 'campaign_guard.py' @('--self-test')
     Invoke-PythonGate 'design site --check' 'build-design-site.py' @('--check')
-    Invoke-PythonGate 'app icons --check' 'build-app-icons.py' @('--check')
+    Invoke-IconGate 'app icons --check' 'build-app-icons.py' @('--check')
+    Invoke-IconGate 'small suite icons --check' 'generate-small-icons.py' @('--check')
+    Invoke-IconGate 'suite mark --check' 'build-suite-mark.py' @('--check')
+    Invoke-IconGate 'export-icons --check' 'export-icons.py' @('--check')
+    Invoke-IconGate 'export-icons tests' 'tests/test_export_icons.py' @()
     Invoke-PythonGate 'design-lint self-test' 'design-lint.py' @('--self-test')
     Invoke-PythonGate 'design-lint baseline' 'design-lint.py' @('--baseline', 'docs/design/.lint-baseline.json')
     Invoke-PythonGate 'drift-check self-test' 'drift-check.py' @('--self-test')

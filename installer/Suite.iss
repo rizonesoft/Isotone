@@ -31,14 +31,14 @@ AppVerName={#AppName} {#AppVersion}
 DefaultDirName={autopf}\Isotone Graphics Suite
 DefaultGroupName=Isotone Graphics Suite
 UninstallDisplayName={#AppName}
-UninstallDisplayIcon={app}\Stilus\{#StilusExe}
+UninstallDisplayIcon={app}\isotone.ico
 VersionInfoDescription={#AppName} Setup
 VersionInfoProductName={#AppName}
 VersionInfoProductVersion={#AppFileVersion}
 OutputBaseFilename=Isotone-{#AppVersion}-{#Runtime}-Setup
 ChangesAssociations=yes
-#if FileExists(RepoRoot + "\resources\icons\stilus\stilus.ico")
-SetupIconFile={#RepoRoot}\resources\icons\stilus\stilus.ico
+#if FileExists(RepoRoot + "\resources\icons\isotone\isotone.ico")
+SetupIconFile={#RepoRoot}\resources\icons\isotone\isotone.ico
 #endif
 
 [Types]
@@ -60,6 +60,8 @@ Name: "assoc_jpg"; Description: "Open .jpg and .jpeg files with Gesso"; GroupDes
 Name: "assoc_psd"; Description: "Open .psd files with Gesso"; GroupDescription: "File associations:"; Components: gesso; Flags: unchecked
 
 [Files]
+; The suite icon, installed so the uninstall entry shows it (UninstallDisplayIcon above).
+Source: "{#RepoRoot}\resources\icons\isotone\isotone.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#StilusDir}\*"; DestDir: "{app}\Stilus"; Components: stilus; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#GessoDir}\*"; DestDir: "{app}\Gesso"; Components: gesso; Flags: ignoreversion recursesubdirs createallsubdirs
 #ifdef AlbumenShipping

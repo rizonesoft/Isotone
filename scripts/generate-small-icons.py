@@ -2,8 +2,10 @@
 
 Each variant carries the three lights alone, scaled to fill the space above the spectrum band (operator decision
 2026-09-27). The three app icons and their small variants are built by scripts/build-app-icons.py.
-Usage: python scripts/generate-small-icons.py --in-place   (rewrites resources/icons/<app>/<app>-{16,24,32}.svg)
-Requires resvg-py and Pillow (see scripts/requirements-icons.txt once D00 T03 §3 ships).
+Usage: python scripts/generate-small-icons.py --in-place   (rewrites resources/icons/isotone/isotone-{16,24,32}.svg)
+       python scripts/generate-small-icons.py --check      (exit 1 naming each committed variant that differs from what
+                                                            this script writes; nothing is written)
+Requires resvg-py and Pillow (scripts/requirements-icons.txt).
 """
 import re, io, resvg_py
 from PIL import Image
@@ -51,7 +53,18 @@ def small(app,sz):
 import sys
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        sys.exit('usage: generate-small-icons.py --in-place | <out-dir>')
+        sys.exit('usage: generate-small-icons.py --in-place | --check | <out-dir>')
+    if sys.argv[1] == '--check':
+        stale = []
+        for app in ['isotone']:
+            for sz in (16, 24, 32):
+                path = os.path.join(R, app, f'{app}-{sz}.svg')
+                if not os.path.exists(path) or open(path, encoding='utf-8').read() != small(app, sz):
+                    stale.append(os.path.relpath(path, os.path.join(R, '..', '..')).replace(os.sep, '/'))
+        for rel in stale:
+            print(f'STALE {rel}: run python scripts/generate-small-icons.py --in-place')
+        print(f'small suite icons: {len(stale)} stale')
+        sys.exit(1 if stale else 0)
     for app in ['isotone']:
         out = os.path.join(R, app) if sys.argv[1] == '--in-place' else sys.argv[1]
         for sz in (16, 24, 32):
