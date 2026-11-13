@@ -264,6 +264,25 @@ class PageLayout(unittest.TestCase):
         self.assertIn('data-theme="dark"', src)
 
 
+class DocumentedCommands(unittest.TestCase):
+    def test_the_skills_verify_what_they_render(self):
+        # Completion review: the skills rendered one component and then re-checked the whole catalog, which owes
+        # 256 renders and so refused a good run of eight. The re-check carries the same selection as the run.
+        for tree in (".claude", ".agents"):
+            text = (ROOT / tree / "skills" / "review-todo-section" / "SKILL.md").read_text(encoding="utf-8")
+            renders = re.findall(r"`python scripts/render-design-reference\.py (--components \S+)`", text)
+            checks = re.findall(r"`python scripts/render-design-reference\.py --verify build/design-reference( --components \S+)?`", text)
+            self.assertEqual(len(renders), 1, tree)
+            self.assertEqual([c.strip() for c in checks], renders, f"{tree}: the re-check names the selection the run rendered")
+
+    def test_a_subset_is_owed_only_its_own_renders(self):
+        site = rdr.site_module()
+        self.assertEqual(len(rdr.expected_set(site, ["Button"], rdr.THEMES, rdr.DENSITIES)), 8)
+        whole = rdr.expected_set(site, None, rdr.THEMES, rdr.DENSITIES)
+        self.assertEqual(len(whole), 8 * len({c for c, _t, _d in whole}))
+        self.assertGreater(len(whole), 8)
+
+
 class PictureChecks(unittest.TestCase):
     def test_a_one_color_picture_is_blank_and_a_drawn_one_is_not(self):
         self.assertEqual(rdr.png_colors(png(8, 8, lambda x, y: (50, 50, 50))), 1)
