@@ -1,4 +1,5 @@
-# isotone::core, the shared non-UI library: the build identity, the error type, app-data folders, and the structured log.
+# isotone::core, the shared non-UI library: the build identity, the error type, app-data folders, the structured log, atomic
+# file writes, and the settings store.
 set(ISOTONE_BUILD_ID_HEADER "${CMAKE_CURRENT_BINARY_DIR}/generated/isotone/core/build_id.h")
 add_custom_target(isotone_build_id
   COMMAND "${CMAKE_COMMAND}" "-DOUT=${ISOTONE_BUILD_ID_HEADER}" "-DSOURCE_DIR=${PROJECT_SOURCE_DIR}/.."
@@ -9,10 +10,12 @@ add_custom_target(isotone_build_id
 
 isotone_add_library(isotone_core
   src/app_paths.cpp
+  src/atomic_file.cpp
   src/build_info.cpp
   src/error.cpp
   src/imaging/premultiply.cpp
   src/log.cpp
+  src/settings.cpp
   src/utf.cpp
   PUBLIC_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 add_library(isotone::core ALIAS isotone_core)
@@ -21,3 +24,5 @@ target_include_directories(isotone_core PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/gen
 target_compile_definitions(isotone_core PRIVATE "ISOTONE_VERSION=\"${ISOTONE_VERSION}\"")
 # SHGetKnownFolderPath (shell32) and CoTaskMemFree (ole32) resolve the app-data folders (D01 T27 §1).
 target_link_libraries(isotone_core PUBLIC shell32 ole32)
+# nlohmann/json is header-only and included by src/settings.cpp alone, never by a public header (D01 T27 §2).
+target_link_libraries(isotone_core PRIVATE nlohmann_json::nlohmann_json)

@@ -3,7 +3,9 @@
   "name": "isotone",
   "version-semver": "0.0.0",
   "builtin-baseline": "9eec002df1cd109f8f104cd966a763daf9751489",
-  "dependencies": [],
+  "dependencies": [
+    "nlohmann-json"
+  ],
   "features": {
     "test": {
       "description": "The test harness: GoogleTest, for tests only; an app build never requests this feature.",

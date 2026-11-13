@@ -1,0 +1,1 @@
+{"version": 1, "values": {"list": [1, 2], "nested": {"k": null}, "nothing": null, "big": 18446744073709551615, "neg": -3, "exp": 1e-7}}

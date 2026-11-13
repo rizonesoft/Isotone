@@ -15,7 +15,7 @@ Cross-cutting standards for every app in the Isotone Graphics Suite (Stilus, Ges
 | Rendering | Direct2D and DirectWrite for the interface and vector content; the shared pixel engine for raster content; Direct3D 11 for the GPU paths | A rendering library joins only for a measured need Direct2D cannot meet, through the dependency register |
 | Packages | vcpkg in manifest mode, one committed baseline, static triplets | Every library enters through the register `docs/dev/native-libraries.md` |
 | Tests | GoogleTest through CTest, Google Benchmark, libFuzzer | See [`testing.md`](testing.md) |
-| Settings and JSON | Atomic JSON settings through `isotone::core` | The JSON library is a register decision made by the section that first needs it |
+| Settings and JSON | Atomic JSON settings through `isotone::core` | The JSON library is nlohmann/json (`D01 T27 §2`, `docs/dev/native-libraries.md`), included only inside `isotone::core` |
 
 **A dependency is a decision.** A library outside this table is added by a section that records why, registers it in `docs/dev/native-libraries.md` in the same commit as the code that first uses it, and checks its license against GPL-3.0: permissive (MIT, BSD, Apache-2.0) and LGPL are compatible; a license that forbids redistribution, needs a paid key, or restricts field of use is not. `scripts/native-deps-lint.py` keeps the register and the installed ports in step.
 
@@ -90,7 +90,7 @@ The contract is the spec's "Document safety": seven save invariants, the file id
 - Checkpoints go to the app's recovery folder, never over the user's file. Recovery offers what it found and deletes nothing without asking.
 - A read-only file, a locked folder, or a full disk is refused with a message naming the file and the reason; the document stays open and dirty.
 - Albumen never writes an original image unless the user opts in; a verified backup is taken by default. See [`albumen.md`](albumen.md).
-- Settings live in `%LOCALAPPDATA%\Rizonesoft\<App>\settings.json`, written atomically and read back through the `isotone::core` settings store. Every setting has a default, a consumer, and a log line when it changes.
+- Settings live in `%LOCALAPPDATA%\Rizonesoft\<App>\settings\settings.json` (the `settings` folder beside the executable in portable mode), written atomically and read back through the `isotone::core` settings store. Every setting has a default, a consumer, and a log line when it changes.
 
 ## Performance
 

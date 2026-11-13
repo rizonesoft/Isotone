@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "values": {
+    "canvas.zoom": 1.5,
+    "name": "Zoë",
+    "recent.count": 12,
+    "snap.enabled": true,
+    "ui.theme": "dark"
+  }
+}

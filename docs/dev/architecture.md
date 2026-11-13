@@ -35,7 +35,7 @@ native/
   triplets/       the vcpkg overlay triplets (x64 and ARM64, plain and AddressSanitizer)
 ```
 
-Namespaces follow the folders: `isotone::core`, `isotone::ui`, `isotone::stilus`, `isotone::gesso`, `isotone::albumen`. Today the tree holds the toolchain, the build, the gates, and `isotone::core`'s build identity, premultiply kernels, error type, app-data folders, and structured log; the foundations, the toolkit, and the apps arrive with their own sections ([`native/README.md`](../../native/README.md)).
+Namespaces follow the folders: `isotone::core`, `isotone::ui`, `isotone::stilus`, `isotone::gesso`, `isotone::albumen`. Today the tree holds the toolchain, the build, the gates, and `isotone::core`'s build identity, premultiply kernels, error type, app-data folders, structured log, atomic file writes (`AtomicFile`), and settings store (`Settings`); the foundations, the toolkit, and the apps arrive with their own sections ([`native/README.md`](../../native/README.md)).
 
 ## The shared libraries
 
@@ -65,6 +65,7 @@ Every app has the same skeleton, set by [`standards/shared.md`](../../standards/
 - **Commands:** every command is registered once in the command registry, and every surface reads that registration. Logic lives in the app's core library, which is tested without a window; a surface holds view state only.
 - **Threads:** the UI thread (an OLE single-threaded apartment) owns every window and is the only thread that changes a document; a render thread owns the Direct3D context; engines read immutable snapshots; tasks are cancellable and hold their document weakly.
 - **Logging:** the structured log of `isotone::core`, writing to `%LOCALAPPDATA%\Rizonesoft\<App>\logs\`, one line per action that changes a document or a setting.
+- **Settings:** the settings store of `isotone::core` (`Settings`), one versioned `settings.json` in `%LOCALAPPDATA%\Rizonesoft\<App>\settings\`, every change merged with the file under its lock, written through `AtomicFile` (temporary file, flush, readback, replace), and logged; a file that is unreadable or from a newer version is moved aside, never overwritten.
 - **Documents:** every edit is an undo step; saves meet the spec's seven invariants; checkpoints and recovery never overwrite the user's file; secondary copies of document data are encrypted.
 - **Surfaces:** the suite's own controls drawn to their specs from design tokens; every icon-only control has a tooltip and a UI Automation name.
 

@@ -56,6 +56,9 @@ if(BUILD_TESTING)
   include(GoogleTest)
 endif()
 
+# nlohmann/json reads and writes the settings file inside isotone::core (D01 T27 §2, docs/dev/native-libraries.md).
+find_package(nlohmann_json CONFIG REQUIRED)
+
 add_subdirectory(core)
 if(BUILD_TESTING)
   add_subdirectory(tests)

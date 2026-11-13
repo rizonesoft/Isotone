@@ -68,3 +68,7 @@ docs/reviews/** text eol=lf
 # A source archive (git archive) carries its commit in this file, which native/cmake/WriteBuildId.cmake reads when
 # there is no .git (D00 T05 §3).
 native/BUILD_ID.txt export-subst
+
+# Fuzz corpora and regression inputs are exact bytes: never converted (D01 T27 §2)
+native/tests/fuzz/*/corpus/** -text
+native/tests/fuzz/*/regressions/** -text
