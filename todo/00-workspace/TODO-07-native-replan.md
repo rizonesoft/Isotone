@@ -58,7 +58,7 @@ track: W7
 | :---: | :-----: | ----------- | ---------- | :----: |
 |   1   |  §1    | Re-plan the workspace files | D00 T06 §3 |  [x]   |
 |   2   |  §2    | Rewrite the standards and the developer docs for C++ | §1 |  [x]   |
-|   3   |  §3    | Author the native foundations and settle the structure files | §2 |  [ ]   |
+|   3   |  §3    | Author the native foundations and settle the structure files | §2 |  [x]   |
 |   4   |  §4    | Re-plan Phase 2: Stilus foundation: composition, hygiene, triage, correctness | §3 |  [ ]   |
 |   5   |  §5    | Re-plan Phase 3: Stilus 0.1.0: shared UI, complete editing, documents, release | §4 |  [ ]   |
 |   6   |  §6    | Re-plan Phase 4: Stilus parity I: document model, pages, layers, selection, and view | §5 |  [ ]   |
@@ -166,9 +166,12 @@ Phase 1 (Suite layout and names) holds work written for the C# apps. This sectio
 - [x] Update each owned section's row in `todo/supersession-2026-10.md` to its final treatment, naming the successor of every superseded section's acceptance requirements. Done when: no owned row reads `pending`. Done 2026-11-13: the twelve `D02 T01` and `D03 T01` rows read `superseded` with their successors; the boundary notes on `D01 T01 §3`, `§7`, `§8`, `§9` and `D01 T02 §1`, `§2`, `§5` name the foundation that owns each mechanism.
 - [x] Add `D00 T07 §3` to the Depends On of every open section of each file this section re-plans whose Depends On names no other open section of its own file (an open entry point, whether it has no dependencies or depends only on stamped or outside sections; stamped sections are left as they are), so no rewritten row can run before this re-plan section is stamped, even when its review is parked. Done when: `python scripts/todo-graph.py resolve` on each such open entry point exits 4 naming this section. Done 2026-11-13: every new file's entry section names `D00 T07 §3`, and each `resolve` exits 4 naming it (above).
 - [x] Run `python scripts/todo-graph.py validate`, `plan --sync`, `plan --check`, and `python scripts/todo-claims.py`. Done when: no FATAL, no new WARN, the plan current, and every owned file's claims hold. Done 2026-11-13: `validate`: 0 fatal, 0 warning(s), no adjacency advisory in the new files; `plan --check` current; `python scripts/todo-claims.py`: 0 stale, 0 malformed.
-- [ ] Commit: `"todo: re-plan phase 1 onto the native stack"`
+- [x] Commit: `"todo: re-plan phase 1 onto the native stack"`
 
 **Test checkpoint:** Static evidence: the stack `git grep` over every owned file prints nothing, or only lines that name the C# code as history (decision records, changelog entries, and dated corrections in a Current state), each such line listed (quoted); `python scripts/todo-graph.py validate` reports no FATAL and no new WARN, `plan --check` and `python scripts/todo-claims.py` pass (quoted); before this section's stamp, `python scripts/todo-graph.py resolve` on each rewritten file's open entry points exits 4 naming this section (quoted), and the stamp step re-runs it after the stamp and records exit 0 or the row's own remaining dependencies. The review loop reviews the rewritten files against the ten requirements of `docs/plans/2026-10-23-native-replan.md`. Cheaper substitute that fails: renaming WPF terms to C++ terms in place, which leaves sections that cannot be built on the native toolkit.
+
+> **Verified:** 2026-11-13 | §3 | b993a0642cd7b8e406fe6d7b0d69c2d3e8f7b2e2
+> **Review:** `docs/reviews/d00-t07-s3.json`
 
 ## 4. Re-plan Phase 2: Stilus foundation: composition, hygiene, triage, correctness
 

@@ -1,0 +1,94 @@
+{
+  "ref": "D00 T07 \u00a73",
+  "title": "Author the native foundations and settle the structure files",
+  "implementation_sha": "b993a0642cd7b8e406fe6d7b0d69c2d3e8f7b2e2",
+  "date": "2026-11-13",
+  "reviews": [
+    {
+      "round": 1,
+      "report": "docs/reviews/00-workspace/D00-T07-s3.md",
+      "verdict": "fixed"
+    }
+  ],
+  "checks": [
+    "python scripts/todo-graph.py validate -> 0 fatal, 0 warning(s)",
+    "python scripts/todo-graph.py plan --check -> current, 41/869",
+    "python scripts/todo-claims.py -> 0 stale, 0 malformed",
+    "python scripts/todo-graph.py self-test -> 1047 cases, 0 failed",
+    "python scripts/tests/test_isotone_three_pass_stamp.py -> 3 tests OK",
+    "resolve on the fourteen foundation entry sections -> exit 4 naming D00 T07 \u00a73",
+    "stack git grep over todo/01-core/TODO-14..27 -> no output",
+    "CI on b993a0642cd7b8e406fe6d7b0d69c2d3e8f7b2e2: plan-gates https://github.com/rizonesoft/Isotone/actions/runs/43370957030 success; build https://github.com/rizonesoft/Isotone/actions/runs/43370957074 success"
+  ],
+  "completion": {
+    "report": "docs/reviews/00-workspace/D00-T07-s3.md",
+    "verdict": "reconciled",
+    "candidate": "b993a0642cd7b8e406fe6d7b0d69c2d3e8f7b2e2",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "filed": []
+  },
+  "rounds_spent": 1,
+  "round_cap": 33,
+  "plan": {
+    "report": "docs/reviews/00-workspace/D00-T07-s3.md",
+    "candidate": "750c1eca7b5ba40f807afabd71643c8759b763a0",
+    "reviewer": "astra",
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "lenses": [
+      "plan"
+    ]
+  },
+  "schedule_sha": "750c1eca7b5ba40f807afabd71643c8759b763a0",
+  "schedule": {
+    "policy": "three-pass",
+    "pass_cap": 33,
+    "blocking": [
+      "P1",
+      "P2"
+    ],
+    "lenses": {
+      "docs-drift": "Does the range update every README, document, standard, skill and source comment that describes behaviour it changed? Name each one that still describes the old behaviour, with file:line and the sentence that is now false. A text that states the old behaviour is at least P2: the writer and the reviewers act on these documents, so a false one is a wrong result waiting to happen, and the stamp is refused while one remains."
+    },
+    "plan": {
+      "effort": "medium",
+      "lenses": [
+        "plan"
+      ]
+    },
+    "rounds": [
+      {
+        "effort": "medium",
+        "lenses": [
+          "adversarial",
+          "consistency",
+          "integration",
+          "quality",
+          "optimization",
+          "source-defect",
+          "design",
+          "docs-drift"
+        ]
+      }
+    ],
+    "completion": {
+      "effort": "medium",
+      "lenses": [
+        "plan-delivery",
+        "record"
+      ]
+    },
+    "reconciliation": {
+      "effort": "medium",
+      "lenses": [
+        "adversarial",
+        "integration",
+        "plan-delivery",
+        "record"
+      ]
+    }
+  },
+  "passes_spent": 5,
+  "pass_cap": 33
+}
