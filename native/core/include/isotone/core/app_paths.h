@@ -39,7 +39,8 @@ struct AppFolders
 // Resolves the folders for app_name (UTF-8, such as "Stilus": not empty, not "." or "..", no path separator,
 // reserved character, or control character): <local app data>\Rizonesoft\<app>\, or the executable's folder when
 // kPortableMarker is a file there. Creates every folder that does not exist. Throws Error naming the failing call
-// for an invalid name or a folder that cannot be created. Any thread.
+// for an invalid name, a portable marker that cannot be inspected (only an absent marker means per-user), or a folder
+// that cannot be created. Any thread.
 [[nodiscard]] AppFolders resolve_app_folders(std::string_view app_name, const AppFolderSources& sources);
 
 } // namespace isotone::core

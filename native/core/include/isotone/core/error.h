@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <exception>
+#include <memory>
 #include <string>
 #include <string_view>
 
@@ -30,8 +31,13 @@ class Error : public std::exception
     [[nodiscard]] std::uint32_t code() const noexcept;
 
   private:
-    std::string call_;
-    std::string message_;
+    struct Text
+    {
+        std::string call;
+        std::string message;
+    };
+    // Shared, so copying an Error only copies a pointer and never allocates.
+    std::shared_ptr<const Text> text_;
     std::uint32_t code_;
 };
 

@@ -89,7 +89,8 @@ struct LogConfig
     LogOutputs outputs;
     // The memory buffer keeps the newest this many events.
     std::size_t memory_capacity = 1000;
-    // A line that would take a file past this size starts a new part.
+    // A line that would take a file past this size starts a new part; an event whose line alone is larger is
+    // written as a stand-in record naming its size, and the memory buffer keeps the whole event.
     std::uint64_t max_file_bytes = 10ULL * 1024ULL * 1024ULL;
     // The newest this many files are kept; older ones are deleted when a new file starts.
     std::size_t max_files = 7;
@@ -136,7 +137,8 @@ class Log
   private:
     struct File;
 
-    void write_file_locked(const LogEvent& event, const std::string& line);
+    void write_file_locked(const LogEvent& event, const std::string& full_line);
+    [[nodiscard]] std::string oversized_stand_in(const LogEvent& event, std::size_t bytes) const;
     bool open_locked(std::chrono::sys_days day, std::uint64_t incoming_bytes);
     void prune_locked();
 

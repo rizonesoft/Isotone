@@ -104,8 +104,15 @@ AppFolders resolve_app_folders(std::string_view app_name, const AppFolderSources
 {
     check_app_name(app_name);
     AppFolders folders;
+    const auto marker = sources.executable_folder / kPortableMarker;
     std::error_code error;
-    folders.portable = std::filesystem::is_regular_file(sources.executable_folder / kPortableMarker, error);
+    const auto marker_status = std::filesystem::status(marker, error);
+    if (error && marker_status.type() != std::filesystem::file_type::not_found)
+    {
+        throw Error{"std::filesystem::status", static_cast<std::uint32_t>(error.value()),
+                    "checking the portable marker " + detail::utf16_to_utf8(marker.native())};
+    }
+    folders.portable = std::filesystem::is_regular_file(marker_status);
     if (folders.portable)
     {
         folders.root = sources.executable_folder;

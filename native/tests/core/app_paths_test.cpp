@@ -115,4 +115,20 @@ TEST(AppPaths, FailureNamesTheCall)
                                   << " invalid name(s), the first: " << accepted.front();
 }
 
+TEST(AppPaths, UnreadableMarkerIsReported)
+{
+    const TempFolder temp;
+    // A device path makes the marker uninspectable (std::filesystem::status reports no type and an error), which is
+    // not the same as absent: only a not-found marker means per-user mode.
+    const AppFolderSources sources{.local_app_data = temp.path(), .executable_folder = LR"(\\.\CON)"};
+    const auto error = error_from([&] { (void)resolve_app_folders("TestApp", sources); });
+    if (!error.has_value())
+    {
+        ADD_FAILURE() << "an uninspectable marker was read as per-user mode";
+        return;
+    }
+    EXPECT_EQ(error->call(), "std::filesystem::status");
+    EXPECT_FALSE(std::filesystem::exists(temp.path() / "Rizonesoft"));
+}
+
 } // namespace

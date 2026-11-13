@@ -267,6 +267,27 @@ TEST(Log, SizeLimitStartsNewPart)
     EXPECT_EQ(survey.malformed, 0U);
 }
 
+TEST(Log, OversizedEventIsReplaced)
+{
+    const TempFolder temp;
+    const TestClock clock{kMorning};
+    auto config = config_for(temp, clock);
+    config.max_file_bytes = 600;
+    Log log{std::move(config)};
+    log.write(LogLevel::Information, "Imported {text}", {LogField{"text", std::string(2000, 'x')}});
+    log.write(LogLevel::Information, "Small");
+    EXPECT_EQ(log.failures(), 0U);
+    const auto recent = log.recent();
+    ASSERT_EQ(recent.size(), 2U);
+    EXPECT_EQ(std::get<std::string>(recent.front().fields.at(0).value).size(), 2000U);
+    const auto survey = survey_folder(temp.path() / "logs", 600);
+    EXPECT_EQ(survey.records, 2U);
+    EXPECT_EQ(survey.oversized, 0U);
+    const auto first = lines_of(temp.path() / "logs" / "testapp-2026-11-13.log").at(0);
+    EXPECT_TRUE(first.contains("exceeded the 600-byte file limit")) << first;
+    EXPECT_TRUE(first.contains("Imported {text}")) << first;
+}
+
 TEST(Log, KeepsNewestSevenFiles)
 {
     const TempFolder temp;

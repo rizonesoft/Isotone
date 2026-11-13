@@ -469,11 +469,20 @@ std::uint64_t Log::failures() const noexcept
     return failures_.load(std::memory_order_relaxed);
 }
 
-void Log::write_file_locked(const LogEvent& event, const std::string& line)
+void Log::write_file_locked(const LogEvent& event, const std::string& full_line)
 {
     const auto day = std::chrono::floor<std::chrono::days>(event.time);
+    // A file never passes max_file_bytes: an event too large for any file is replaced by a stand-in record naming
+    // its size and how its template began; the memory buffer keeps the whole event.
+    const std::string line =
+        full_line.size() + 2 <= config_.max_file_bytes ? full_line : oversized_stand_in(event, full_line.size());
     // The line, its break, and at most one break before it.
     const std::uint64_t incoming = line.size() + 2;
+    if (incoming > config_.max_file_bytes)
+    {
+        failures_.fetch_add(1, std::memory_order_relaxed);
+        return;
+    }
     if (!open_locked(day, incoming))
     {
         failures_.fetch_add(1, std::memory_order_relaxed);
@@ -541,6 +550,19 @@ bool Log::open_locked(std::chrono::sys_days day, std::uint64_t incoming_bytes)
         }
         return true;
     }
+}
+
+std::string Log::oversized_stand_in(const LogEvent& event, std::size_t bytes) const
+{
+    constexpr std::size_t kTemplateStart = 200;
+    const LogEvent stand_in{
+        .time = event.time,
+        .level = event.level,
+        .message_template =
+            "An event of {bytes} bytes exceeded the {limit}-byte file limit; its template began: {start}",
+        .fields = {LogField{"bytes", static_cast<std::uint64_t>(bytes)}, LogField{"limit", config_.max_file_bytes},
+                   LogField{"start", event.message_template.substr(0, kTemplateStart)}}};
+    return to_json_line(stand_in);
 }
 
 void Log::prune_locked()
