@@ -725,6 +725,62 @@ TEST(AtomicFile, FirstWriteWrongBytesAreNeverReturned)
     EXPECT_TRUE(names_in(temp.path()).empty());
 }
 
+// A read without the lock that a failing write crosses: the write replaces the target after the reader looked for a
+// journal, the reader reads the new bytes, and the write then fails its readback and puts the previous version back
+// before the reader looks again. The reader must not return the version that was rolled back.
+TEST(AtomicFile, ReadNeverReturnsAVersionAWriteRolledBack)
+{
+    using isotone::core::AtomicFileReadPoint;
+    const TempFolder temp;
+    const auto target = temp.path() / "data.json";
+    const auto backup = temp.path() / "data.json.bak";
+    int crossings = 0;
+    AtomicFileOptions options;
+    options.seams.reading = [&target, &backup, &crossings](AtomicFileReadPoint point) {
+        if (crossings == 0 && point == AtomicFileReadPoint::BeforeRead)
+        {
+            // What a write's replace does: the previous version goes to the backup's name, new bytes take the name.
+            std::filesystem::rename(target, backup);
+            put(target, kWrong);
+        }
+        else if (crossings == 0 && point == AtomicFileReadPoint::AfterRead)
+        {
+            // What its failed readback does: the previous version comes back, and nothing else is left.
+            std::filesystem::rename(backup, target);
+            crossings = 1;
+        }
+    };
+    const AtomicFile file{target, options};
+    put(target, kPrevious);
+
+    EXPECT_EQ(text_of(file.read()), kPrevious);
+    EXPECT_EQ(crossings, 1);
+    EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"data.json"});
+}
+
+// A read without the lock that a successful write crosses returns the new version, never a mix or nothing.
+TEST(AtomicFile, ReadCrossedByASuccessfulWriteReturnsTheNewVersion)
+{
+    using isotone::core::AtomicFileReadPoint;
+    const TempFolder temp;
+    const AtomicFile writer{temp.path() / "data.json"};
+    bool crossed = false;
+    AtomicFileOptions options;
+    options.seams.reading = [&writer, &crossed](AtomicFileReadPoint point) {
+        if (!crossed && point == AtomicFileReadPoint::AfterRead)
+        {
+            crossed = true;
+            writer.write(bytes_of(kWanted));
+        }
+    };
+    const AtomicFile reader{temp.path() / "data.json", options};
+    put(reader.target(), kPrevious);
+
+    EXPECT_EQ(text_of(reader.read()), kWanted);
+    EXPECT_TRUE(crossed);
+    EXPECT_EQ(names_in(temp.path()), std::set<std::string>{"data.json"});
+}
+
 // A folder that cannot be written (the lock cannot be created): the read changes nothing and returns the copy the
 // journal names as good.
 TEST(AtomicFile, UnwritableFolderIsReadByTheJournalAndLeftAlone)

@@ -29,6 +29,13 @@ enum class AtomicFileStep : std::uint8_t
     DeleteBackup,
 };
 
+// The two points of a read without the lock a test can act at (AtomicFileSeams::reading).
+enum class AtomicFileReadPoint : std::uint8_t
+{
+    BeforeRead,
+    AfterRead,
+};
+
 // Test seams: production code leaves them empty.
 struct AtomicFileSeams
 {
@@ -39,6 +46,8 @@ struct AtomicFileSeams
     // Called once the target has taken the new bytes and before it is read back: a test stores other bytes there,
     // as a failing device would.
     std::function<void()> after_replace;
+    // Called before and after a read without the lock reads the target: a test lets a write cross the read there.
+    std::function<void(AtomicFileReadPoint point)> reading;
 };
 
 struct AtomicFileOptions
@@ -125,9 +134,10 @@ class AtomicFile
     [[nodiscard]] Session lock() const;
 
     // The whole file, or nothing when there is none. With no backup and no journal beside the target this takes no
-    // lock and writes nothing, so it works in a folder that cannot be written. With either, it takes the lock and
-    // settles as Session::read does; in a folder where no lock can be created it changes nothing and returns the
-    // copy settling would choose.
+    // lock and writes nothing, so it works in a folder that cannot be written; it returns only bytes no write
+    // crossed (it reads again, and takes the lock, when one did), so never a version a write then rolled back. With
+    // either, it takes the lock and settles as Session::read does; in a folder where no lock can be created it changes
+    // nothing and returns the copy settling would choose.
     [[nodiscard]] std::optional<std::vector<std::byte>> read(const AtomicFileCheck& check = {}) const;
 
     // lock() then Session::write.

@@ -44,6 +44,8 @@ constexpr std::chrono::milliseconds kDeniedWait{250};
 // How long opening a file for reading waits out a sharing violation (a replace in progress holds it briefly).
 constexpr std::chrono::milliseconds kSharingWait{250};
 constexpr std::chrono::milliseconds kRetryPause{10};
+// How often a read without the lock is tried again when a write crossed it, before it takes the lock.
+constexpr int kUnlockedReadTries = 4;
 
 struct HandleCloser
 {
@@ -174,16 +176,53 @@ bool read_to_end(HANDLE handle, const std::filesystem::path& file, std::uint64_t
     }
 }
 
+// Which file a name holds: the volume and the file's index on it. Two opens of one name give the same identity
+// exactly when no other file took the name in between.
+struct FileIdentity
+{
+    DWORD volume = 0;
+    std::uint64_t index = 0;
+
+    bool operator==(const FileIdentity&) const = default;
+};
+
+std::optional<FileIdentity> identity_of(HANDLE handle) noexcept
+{
+    BY_HANDLE_FILE_INFORMATION information{};
+    if (GetFileInformationByHandle(handle, &information) == FALSE)
+    {
+        return std::nullopt;
+    }
+    return FileIdentity{.volume = information.dwVolumeSerialNumber,
+                        .index = (static_cast<std::uint64_t>(information.nFileIndexHigh) << 32U) |
+                                 information.nFileIndexLow};
+}
+
+// The identity of the file at a name now, or nothing when there is none (or it cannot be told).
+std::optional<FileIdentity> identity_at(const std::filesystem::path& file) noexcept
+{
+    const UniqueHandle handle =
+        own(CreateFileW(file.c_str(), FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                        nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
+    return handle ? identity_of(handle.get()) : std::nullopt;
+}
+
 // One attempt at reading the whole file, or nothing when it does not exist. unbuffered reads the device rather than
-// the file cache; when the file system refuses that, refused is set and nothing is returned. Throws Error; a file
-// over max_bytes is ERROR_FILE_TOO_LARGE, decided before anything is allocated for it.
+// the file cache; when the file system refuses that, refused is set and nothing is returned. identity, when given,
+// receives which file was read. Throws Error; a file over max_bytes is ERROR_FILE_TOO_LARGE, decided before
+// anything is allocated for it.
 std::optional<std::vector<std::byte>> read_once(const std::filesystem::path& file, std::uint64_t max_bytes,
-                                                bool unbuffered, bool& refused)
+                                                bool unbuffered, bool& refused,
+                                                std::optional<FileIdentity>* identity = nullptr)
 {
     refused = false;
     const DWORD flags = FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN | (unbuffered ? FILE_FLAG_NO_BUFFERING : 0U);
     DWORD code = ERROR_SUCCESS;
     const UniqueHandle handle = open_for_reading(file, flags, code);
+    if (identity != nullptr)
+    {
+        *identity = handle ? identity_of(handle.get()) : std::nullopt;
+    }
     if (!handle)
     {
         if (code == ERROR_FILE_NOT_FOUND || code == ERROR_PATH_NOT_FOUND)
@@ -222,18 +261,18 @@ std::optional<std::vector<std::byte>> read_once(const std::filesystem::path& fil
 // The whole file, or nothing when it does not exist. unbuffered reads the device rather than the file cache, and
 // falls back to an ordinary read where the file system refuses that. Throws Error as read_once does.
 std::optional<std::vector<std::byte>> read_whole(const std::filesystem::path& file, std::uint64_t max_bytes,
-                                                 bool unbuffered)
+                                                 bool unbuffered, std::optional<FileIdentity>* identity = nullptr)
 {
     bool refused = false;
     if (unbuffered)
     {
-        auto bytes = read_once(file, max_bytes, true, refused);
+        auto bytes = read_once(file, max_bytes, true, refused, identity);
         if (!refused)
         {
             return bytes;
         }
     }
-    return read_once(file, max_bytes, false, refused);
+    return read_once(file, max_bytes, false, refused, identity);
 }
 
 // Reads file back from the device and compares it with expected. Nothing when they agree.
@@ -898,16 +937,29 @@ std::optional<std::vector<std::byte>> AtomicFile::read(const AtomicFileCheck& ch
     const Files files{
         .target = target_, .temporary = temporary_path(), .backup = backup_path(), .journal = journal_path()};
     const auto unsettled = [&files] { return file_exists(files.backup) || file_exists(files.journal); };
-    if (!unsettled())
+    const auto reached = [this](AtomicFileReadPoint point) {
+        if (options_.seams.reading)
+        {
+            options_.seams.reading(point);
+        }
+    };
+    // With nothing unsettled the file is read without the lock. What was read counts only if no write was in
+    // flight while it was read: still nothing unsettled afterwards, and the name still holds the very file that
+    // was read. A write that replaced the target, failed its readback, and put the previous version back leaves no
+    // backup and no journal behind, but it leaves another file at the name, and its unverified bytes must never be
+    // returned; a write that succeeded in between leaves its new file there, and the next try reads that.
+    for (int attempt = 0; attempt < kUnlockedReadTries && !unsettled(); ++attempt)
     {
-        auto bytes = read_whole(target_, options_.max_read_bytes, false);
-        // A replace renames the target away for an instant: nothing at the target with a backup or a journal now
-        // present means a writer is at work, and the locked read below waits for it.
-        if (bytes || !unsettled())
+        reached(AtomicFileReadPoint::BeforeRead);
+        std::optional<FileIdentity> read_from;
+        auto bytes = read_whole(target_, options_.max_read_bytes, false, &read_from);
+        reached(AtomicFileReadPoint::AfterRead);
+        if (!unsettled() && identity_at(target_) == read_from)
         {
             return bytes;
         }
     }
+    // A writer is at work, or keeps being: the locked read waits for it and settles what it left.
     try
     {
         return lock().read(check);
