@@ -36,6 +36,7 @@ const std::array<KeyInfo, kTokenCount> kKeys{{
     KeyInfo{.name = "text-secondary", .type = TokenType::Color, .rule = Rule::Value, .slot = 20, .first = TokenKey::TextSecondary, .second = TokenKey::TextSecondary}, // text-secondary
     KeyInfo{.name = "text-disabled", .type = TokenType::Color, .rule = Rule::Value, .slot = 21, .first = TokenKey::TextDisabled, .second = TokenKey::TextDisabled}, // text-disabled
     KeyInfo{.name = "text-placeholder", .type = TokenType::Color, .rule = Rule::Value, .slot = 22, .first = TokenKey::TextPlaceholder, .second = TokenKey::TextPlaceholder}, // text-placeholder
+    KeyInfo{.name = "text-control", .type = TokenType::Color, .rule = Rule::Alias, .slot = 0, .first = TokenKey::TextPrimary, .second = TokenKey::TextPrimary}, // text-control
     KeyInfo{.name = "icon", .type = TokenType::Color, .rule = Rule::Alias, .slot = 0, .first = TokenKey::TextSecondary, .second = TokenKey::TextSecondary}, // icon
     KeyInfo{.name = "state", .type = TokenType::Color, .rule = Rule::Value, .slot = 23, .first = TokenKey::State, .second = TokenKey::State}, // state
     KeyInfo{.name = "state-hover", .type = TokenType::Color, .rule = Rule::Value, .slot = 24, .first = TokenKey::StateHover, .second = TokenKey::StateHover}, // state-hover
@@ -617,6 +618,7 @@ const std::array<TokenKey, kTokenCount> kIsotoneOrange{{
     TokenKey::TextSecondary, // text-secondary
     TokenKey::TextDisabled, // text-disabled
     TokenKey::TextPlaceholder, // text-placeholder
+    TokenKey::TextControl, // text-control
     TokenKey::Icon, // icon
     TokenKey::StateOrange, // state
     TokenKey::StateOrangeHover, // state-hover
@@ -792,6 +794,7 @@ const std::array<Contrast, kTokenCount> kHighContrast{{
     Contrast{.rule = ContrastRule::System, .system = SystemColor::WindowText}, // text-secondary
     Contrast{.rule = ContrastRule::System, .system = SystemColor::GrayText}, // text-disabled
     Contrast{.rule = ContrastRule::System, .system = SystemColor::GrayText}, // text-placeholder
+    Contrast{.rule = ContrastRule::System, .system = SystemColor::ButtonText}, // text-control
     Contrast{.rule = ContrastRule::System, .system = SystemColor::WindowText}, // icon
     Contrast{.rule = ContrastRule::System, .system = SystemColor::Highlight}, // state
     Contrast{.rule = ContrastRule::System, .system = SystemColor::Highlight}, // state-hover

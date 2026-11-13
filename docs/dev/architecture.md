@@ -28,7 +28,7 @@ native/
   toolchain.json  CMakePresets.json  vcpkg.json   the toolchain pin, the presets, the package manifest
   cmake/          the shared CMake helpers every target goes through
   core/           isotone::core, the shared non-UI library
-  ui/             isotone::ui, the shared UI toolkit (planned: the native UI foundation creates it)
+  ui/             isotone::ui, the shared UI toolkit (started: the generated token tables and Theme; the rest is planned)
   stilus/  gesso/  albumen/          one folder per app: its core library and its executable (planned)
   tests/          the GoogleTest suites, fixtures, and fuzz corpora, one folder per library or app
   benchmarks/     the Google Benchmark harness

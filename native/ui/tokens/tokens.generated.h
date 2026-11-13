@@ -39,6 +39,7 @@ enum class TokenKey : std::uint8_t
     TextSecondary, // text-secondary
     TextDisabled, // text-disabled
     TextPlaceholder, // text-placeholder
+    TextControl, // text-control
     Icon, // icon
     State, // state
     StateHover, // state-hover
@@ -190,7 +191,7 @@ enum class TokenKey : std::uint8_t
     BodyStrongCompact, // body-strong-compact
 };
 
-inline constexpr std::size_t kTokenCount = 172;
+inline constexpr std::size_t kTokenCount = 173;
 
 // What kind of value a key resolves to.
 enum class TokenType : std::uint8_t

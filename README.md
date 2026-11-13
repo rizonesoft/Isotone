@@ -195,7 +195,7 @@ flowchart TB
 
 | Path | What it holds |
 | ---- | ------------- |
-| `native/` | The C++23 suite: `isotone::core`, `isotone::ui` (planned), the apps (planned), vcpkg manifest and triplets, CMake presets, and GoogleTest/libFuzzer suites |
+| `native/` | The C++23 suite: `isotone::core`, `isotone::ui` (started: the token tables and `Theme`), the apps (planned), vcpkg manifest and triplets, CMake presets, and GoogleTest/libFuzzer suites |
 | `docs/` | User and developer documentation ([index](docs/README.md)) and the [Isotone Interface design system](docs/design/README.md) |
 | `todo/` | The development plan and TODO tree ([implementation plan](todo/implementation-plan.md)) |
 | `installer/` | Inno Setup scripts, one per app plus the suite |

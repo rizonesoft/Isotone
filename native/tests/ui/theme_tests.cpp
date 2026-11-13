@@ -484,6 +484,7 @@ void expect_aliases_follow(std::size_t brightness)
     EXPECT_EQ(resolved<Color>(blue, "icon"), resolved<Color>(blue, "text-secondary"));
     EXPECT_EQ(resolved<Color>(blue, "focus-ring"), resolved<Color>(blue, "state-line"));
     EXPECT_EQ(resolved<Color>(blue, "handle-stroke"), resolved<Color>(blue, "state"));
+    EXPECT_EQ(resolved<Color>(blue, "text-control"), resolved<Color>(blue, "text-primary"));
     state.highlight = Highlight::IsotoneOrange;
     const Theme orange{state};
     EXPECT_EQ(resolved<Color>(orange, "focus-ring"), resolved<Color>(blue, "state-orange-line"));
@@ -542,6 +543,21 @@ TEST(Theme, HighContrastMapsEveryColor)
     EXPECT_EQ(resolved<Color>(contrast, "state"),
               state.system_colors.at(static_cast<std::size_t>(SystemColor::Highlight)));
     EXPECT_FLOAT_EQ(resolved<float>(contrast, "control-h"), resolved<float>(Theme{}, "control-h"));
+}
+
+// A control's fill and its label are the pair Windows defines, button face and button text: a contrast theme may
+// give the window text no contrast with the button face.
+TEST(Theme, HighContrastKeepsTheButtonPair)
+{
+    ThemeState state;
+    state.high_contrast = true;
+    state.system_colors = system_colors();
+    const Theme contrast{state};
+    const auto system = [&state](SystemColor color) { return state.system_colors.at(static_cast<std::size_t>(color)); };
+    EXPECT_EQ(resolved<Color>(contrast, "surface-control"), system(SystemColor::ButtonFace));
+    EXPECT_EQ(resolved<Color>(contrast, "surface-control-hover"), system(SystemColor::ButtonFace));
+    EXPECT_EQ(resolved<Color>(contrast, "text-control"), system(SystemColor::ButtonText));
+    EXPECT_NE(resolved<Color>(contrast, "text-control"), resolved<Color>(contrast, "text-primary"));
 }
 
 // The linear value of every sRGB byte is the standard's own formula, to a float's precision.

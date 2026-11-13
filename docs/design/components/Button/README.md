@@ -6,7 +6,7 @@ Command buttons: default, primary (the app accent, once per view), subtle, icon-
 
 | Variant | Size | Tokens |
 | --- | --- | --- |
-| Default | `control-h-compact` 24px (dialogs `control-h-dialog` 28px, Comfortable 30px), min 64px wide (80px in dialogs), 12px side padding, `radius-sm` | `surface-control`, 1px `divider-strong`, label `body` `text-primary` |
+| Default | `control-h-compact` 24px (dialogs `control-h-dialog` 28px, Comfortable 30px), min 64px wide (80px in dialogs), 12px side padding, `radius-sm` | `surface-control`, 1px `divider-strong`, label `body` `text-control` |
 | Primary | as default, `body-strong` label | `accent-<app>` fill and border, label `accent-<app>-on`, hover `accent-<app>-hover` |
 | Subtle | as default, no fill or border | hover `surface-hover` |
 | Icon | square, 16px icon | `icon`, hover icon `text-primary` |

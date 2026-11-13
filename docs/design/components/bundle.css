@@ -102,7 +102,7 @@ button, input, select { font: inherit; color: inherit; }
 .ph-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-1);
   height: var(--ph-ctl); min-width: 64px; padding: 0 var(--space-3);
-  background: var(--surface-control); color: var(--text-primary);
+  background: var(--surface-control); color: var(--text-control);
   border: 1px solid var(--divider-strong); border-radius: var(--radius-sm);
   font-size: var(--ph-fs); line-height: var(--ph-lh); white-space: nowrap; cursor: default;
   transition: background var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
@@ -226,7 +226,7 @@ button, input, select { font: inherit; color: inherit; }
 /* ---------- combo box */
 .ph-combo {
   display: inline-flex; align-items: center; justify-content: space-between; gap: var(--space-2); height: var(--ph-ctl); width: 140px; padding: 0 var(--space-1) 0 var(--space-2);
-  background: var(--surface-control); border: 1px solid var(--border-control); border-radius: var(--radius-sm); color: var(--text-primary); white-space: nowrap;
+  background: var(--surface-control); border: 1px solid var(--border-control); border-radius: var(--radius-sm); color: var(--text-control); white-space: nowrap;
 }
 .ph-combo .ph-i { color: var(--icon); }
 .ph-combo:hover, .ph-combo.is-hover { background: var(--surface-control-hover); border-color: var(--border-control-hover); }
@@ -266,7 +266,7 @@ button, input, select { font: inherit; color: inherit; }
 .ph-menubar { display: flex; align-items: center; gap: 0; }
 .ph-mb { height: 24px; padding: 0 var(--space-2); display: flex; align-items: center; border-radius: var(--radius-sm); color: var(--text-primary); cursor: default; }
 .ph-mb:hover, .ph-mb.is-hover { background: var(--surface-hover); }
-.ph-mb.is-open { background: var(--surface-control-hover); }
+.ph-mb.is-open { background: var(--surface-control-hover); color: var(--text-control); }
 .ph-mb.is-focus { outline: var(--focus-ring-w) solid var(--focus-ring); outline-offset: -2px; }
 .ph-mb u { text-decoration-thickness: 1px; text-underline-offset: 2px; }
 .ph-titlebar .drag { flex: 1; align-self: stretch; }

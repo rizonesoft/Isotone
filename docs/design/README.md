@@ -184,6 +184,7 @@ When Windows high contrast is on (`SPI_GETHIGHCONTRAST`, re-read on `WM_SETTINGC
 | --- | --- |
 | `frame`, `surface-panel`, `surface-tabstrip`, `surface-raised`, `surface-field`, `surface-hover`, `canvas-surround`, `ruler-surface` | `COLOR_WINDOW` |
 | `surface-control`, `surface-control-hover`, `surface-control-pressed` (button fills) | `COLOR_BTNFACE` |
+| `text-control` (labels and values on those fills) | `COLOR_BTNTEXT` |
 | `text-primary`, `text-secondary`, `icon`, `border-control`, `border-popup`, `divider`, `divider-strong`, `scroll-thumb`, the four `status-*` colors, the three `accent-*-on` colors | `COLOR_WINDOWTEXT` |
 | `text-disabled`, `text-placeholder` | `COLOR_GRAYTEXT` |
 | `state`, `state-hover`, `state-pressed`, `state-subtle`, `state-tint`, `selection-inactive`, `border-control-hover`, `scroll-thumb-hover`, `caption-close-hover`, `caption-close-pressed` | `COLOR_HIGHLIGHT` |
@@ -194,7 +195,7 @@ When Windows high contrast is on (`SPI_GETHIGHCONTRAST`, re-read on `WM_SETTINGC
 | `scrim`, the `accent-<app>` and `accent-<app>-hover` fills, the four `status-*-subtle` fills | none: the fill is dropped |
 | `checker-*`, `guide`, `guide-smart`, `ants-*`, `handle-fill`, `handle-stroke`, `artboard` | kept: the theme's own value |
 
-This table is `color.highContrast` in `tokens.json` in prose: that mapping names every color token and is what `isotone::ui` is generated from. A button's label is `text-primary` (`COLOR_WINDOWTEXT`); `COLOR_BTNTEXT` stays available for a component whose spec asks for it.
+This table is `color.highContrast` in `tokens.json` in prose: that mapping names every color token and is what `isotone::ui` is generated from. A label on a control fill is `text-control`, so the button face and the button text stay the pair Windows defines; a custom contrast theme may give `COLOR_WINDOWTEXT` no contrast with `COLOR_BTNFACE`.
 
 Accent and status fills are dropped in high contrast; status keeps its icon and word. The canvas keeps its own colors because it shows the user's content.
 

@@ -144,7 +144,8 @@ class GenerateUiTokensTest(unittest.TestCase):
                     "border-control": "windowText", "divider": "windowText", "divider-strong": "windowText",
                     "text-disabled": "grayText", "state": "highlight", "state-subtle": "highlight",
                     "state-tint": "highlight", "state-on": "highlightText", "state-line": "highlight",
-                    "focus-ring": "highlight", "state-text": "hotlight", "surface-control": "buttonFace"}
+                    "focus-ring": "highlight", "state-text": "hotlight", "surface-control": "buttonFace",
+                    "text-control": "buttonText"}
         for name, target in expected.items():
             self.assertEqual(mapping[name], target, name)
 

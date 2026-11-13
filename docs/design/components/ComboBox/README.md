@@ -6,7 +6,7 @@ Choose one value from a list (blend modes, resample methods, fonts). The editabl
 
 | Part | Size | Tokens |
 | --- | --- | --- |
-| Closed box | `control-h-compact` 24px, 8px left padding, 12px chevron with 4px right padding, `radius-sm` | `surface-control`, 1px `border-control`, `text-primary`, chevron `icon` |
+| Closed box | `control-h-compact` 24px, 8px left padding, 12px chevron with 4px right padding, `radius-sm` | `surface-control`, 1px `border-control`, `text-control`, chevron `icon` (under Windows high contrast the chevron takes `text-control` too) |
 | Editable box | `surface-field` text area plus a 20px drop part divided by 1px `divider-strong` | as TextBox |
 | List | at least the box width, `radius-md`, 4px vertical padding, max 16 rows then scrolls | Menu surface: `surface-raised`, `border-popup`, `shadow-popup` |
 | Item | `menu-row-h-compact` 24px, 16px check column | `text-primary`; selected shows a check |

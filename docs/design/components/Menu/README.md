@@ -6,7 +6,7 @@ Drop-down menus from the menu bar inside the title bar. Highlighted items use th
 
 | Part | Size | Tokens |
 | --- | --- | --- |
-| Menu title | 24px tall, 8px side padding, `radius-sm` | `text-primary`; hover `surface-hover`; open `surface-control-hover` |
+| Menu title | 24px tall, 8px side padding, `radius-sm` | `text-primary`; hover `surface-hover`; open `surface-control-hover` with `text-control` |
 | Menu | min `menu-w-min` (200px), 4px vertical padding, `radius-md` | `surface-raised`, 1px `border-popup`, `shadow-popup` |
 | Item row | `menu-row-h-compact` 24px (Comfortable 30px), inset 4px, `radius-sm` | label `text-primary` in `body` |
 | Icon column | 20px | 16px icon in `icon`; also holds the check or radio dot |
