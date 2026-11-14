@@ -7,7 +7,7 @@ resolve; updated 2026-11-10 to the `D:\\Recto\\.conclave\\reviewers.toml` shape)
 on top and guards the writer's subagents across both Antigravity (`.agents/hooks.json`) and Claude Code
 (`.claude/settings.json` and `.claude/agents/*.md`):
 
-- Antigravity (`agy`) on Gemini 4 Carbon (Medium) (`gemini-4-carbon-medium`) is the repository's writer (operator
+- Antigravity (`agy`) on Orchestrator (Carbon) (`gemini-pro-orchestrator`) is the repository's writer (operator
   decision 2026-11-10, taking over from Claude Code on Opus 5.5).
 - Every route in `[routes]` names a single cross-family reviewer with no fallback (operator decisions 2026-09-25,
   2026-10-21, and 2026-11-10): GPT-6 Astra (`astra`) reviews whichever of `agy`, `claude`, or `muse` wrote the work; a
@@ -15,7 +15,8 @@ on top and guards the writer's subagents across both Antigravity (`.agents/hooks
   the writer's family never reviews.
 - Subagents read and run; they never write (operator decision 2026-10-02). In Antigravity, `.agents/hooks.json` wires
   `agent-gate` on `invoke_subagent|define_subagent|swarm|run_command`, allowing only the read-only `research` subagent
-  on `inherit` (inheriting the writer's `gemini-4-carbon-medium`), denying writable or custom subagents (`self`,
+  on `inherit` (inheriting the active Orchestrator turn's `gemini-pro-orchestrator` or `gemini-flash-worker-agy`),
+  denying writable or custom subagents (`self`,
   `image-generator`, `define_subagent`, `branch`/`share` workspaces, `swarm` workers), `pro`/`flash`/`flash_lite`
   model overrides (`pro` resolves to `gemini-3.8-flash-tiered` in Antigravity), direct CLI agent or reviewer runs
   (`claude`, `agy`, `codex`), and `--no-verify` hook bypasses, while `delegate-audit` verifies the actual served model
@@ -56,10 +57,10 @@ from typing import NamedTuple
 # plus a `delegate-probe` run (and `standards/delegation.md` re-verified).
 DELEGATE_ALIASES = ("sonnet",)
 DELEGATE_EFFORTS = ("high",)
-# The writer (operator decision 2026-11-10: Antigravity on Gemini 4 Carbon Medium takes over from Claude Code as writer)
+# The writer (operator decision 2026-11-10: Antigravity takes over from Claude Code as writer, on Orchestrator (Carbon))
 # and the Claude Code delegate pin served at the last `delegate-probe` (2026-10-01). `routes` key `agy` in the reviewer
 # pin is this writer.
-WRITER = {"agent": "agy", "model": "gemini-4-carbon-medium", "family": "google"}
+WRITER = {"agent": "agy", "model": "gemini-pro-orchestrator", "family": "google"}
 # The second campaign runner (operator decision 2026-11-12: "create one to start in Claude Code"): either runner may
 # write a run, one at a time under the session slot (scripts/campaign_guard.py). `routes` key `claude` reviews it.
 # `opus` is Claude Code's alias for the latest Opus, so the runner moves with each release (operator request 2026-11-12:
@@ -1227,6 +1228,11 @@ def _agy_child_summary(path: str) -> tuple[int, int, list[str]]:
 
 
 _AGY_DISP_EFFORT = re.compile(r"\(([A-Za-z]+)\)\s*$")
+_AGY_EFFORTLESS_MODELS = {
+    "gemini-pro-orchestrator": "Orchestrator (Carbon)",
+    "gemini-pro-orchestrator-argon": "Orchestrator (Argon)",
+    "gemini-flash-worker-agy": "Gemini Flash",
+}
 
 
 def _split_model_effort(model: str) -> tuple[str, str]:
@@ -1326,10 +1332,12 @@ def _parse_agy_gen_row(data: bytes, expected_cid: str, expected_parent: str = ""
         raise ValueError("cascade_id mismatch")
     if expected_parent and meta_map.get("parent_cascade_id") and meta_map["parent_cascade_id"] != expected_parent:
         raise ValueError("parent_cascade_id mismatch")
-    m = _AGY_DISP_EFFORT.search(display_name)
-    disp_effort = m.group(1).lower() if m else ""
     exp = _norm_model(explicit_slug).strip().lower()
     base = _norm_model(base_slug).strip().lower()
+    if base in _AGY_EFFORTLESS_MODELS and exp in ("", base) and display_name == _AGY_EFFORTLESS_MODELS[base]:
+        return base, "auto"
+    m = _AGY_DISP_EFFORT.search(display_name)
+    disp_effort = m.group(1).lower() if m else ""
     effort = disp_effort or _split_model_effort(exp)[1]
     if exp:
         slug = exp
@@ -1382,6 +1390,8 @@ def agy_delegate_audit(main_transcript: str, out, table: dict | None = None, par
     runtime generation metadata in `<appDataDir>/conversations/<conversationId>.db`."""
     table = table or load()
     writer_model = _norm_model(str(table["writer"]["model"])).strip().lower()
+    is_orchestrator = writer_model in ("gemini-pro-orchestrator", "gemini-pro-orchestrator-argon")
+    orchestrator_allowed = {writer_model, "gemini-flash-worker-agy"}
     writer_base, writer_eff_name = _split_model_effort(writer_model)
     writer_floor = EFFORT_RANK.get(writer_eff_name, 0)
     dispatched, parent_unreadable = _agy_dispatched_subagents(main_transcript)
@@ -1419,11 +1429,22 @@ def agy_delegate_audit(main_transcript: str, out, table: dict | None = None, par
             klass, fails = "writable", True
         elif unreadable or turns == 0 or len(gen_turns) < turns:
             klass, fails = "unmeasured", True
-        elif req_norm in ("flash", "flash_lite") or any("flash" in m or "haiku" in m for m in models):
+        elif req_norm in ("flash", "flash_lite") or any(
+            ("flash" in m and not (is_orchestrator and m == "gemini-flash-worker-agy"))
+            or "haiku" in m
+            for m in models
+        ):
             klass, fails = "below-bar", True
+        elif is_orchestrator:
+            if not models.issubset(orchestrator_allowed):
+                klass, fails = "off-pin", True
+            elif req_norm not in ("", "inherit"):
+                klass, fails = "off-pin", True
+            else:
+                klass, fails = "pinned", False
         elif any(_split_model_effort(m)[0] != writer_base for m in models):
             klass, fails = "off-pin", True
-        elif any(EFFORT_RANK[e] < writer_floor for _m, e in gen_turns):
+        elif any(EFFORT_RANK.get(e, -1) < writer_floor for _m, e in gen_turns):
             klass, fails = "below-pin", True
         elif req_norm not in ("", "inherit"):
             klass, fails = "off-pin", True
@@ -7069,6 +7090,7 @@ def _self_test() -> int:
     # Antigravity brain transcript + conversations/<id>.db delegate-audit.
     agy_home = tempfile.mkdtemp(prefix="agy-brain-", dir=tmpd)
     agy_table = {**good, "writer": dict(WRITER)}
+    carbon_table = {**good, "writer": {"agent": "agy", "model": "gemini-4-carbon-medium", "family": "google"}}
 
     def _pvarint(val: int) -> bytes:
         out_b = bytearray()
@@ -7152,7 +7174,7 @@ def _self_test() -> int:
         agy_sub_denied(),
     ])
     buf = io.StringIO()
-    rc = delegate_audit("parent-clean", None, buf, agy_table, audit_agents, agy_root=agy_home, env={})
+    rc = delegate_audit("parent-clean", None, buf, carbon_table, audit_agents, agy_root=agy_home, env={})
     text = buf.getvalue()
     check("agy audit clean mix verifies served models and exits 0",
           rc == 0
@@ -7160,7 +7182,7 @@ def _self_test() -> int:
           and "agent sub-escalated type research requested inherit turns 1 served gemini-4-carbon-high x1 effort high x1: escalated" in text
           and "delegate audit: 2 agents, 1 pinned, 0 failing" in text, text)
     buf = io.StringIO()
-    rc = delegate_audit(None, None, buf, agy_table, audit_agents,
+    rc = delegate_audit(None, None, buf, carbon_table, audit_agents,
                         env={"ANTIGRAVITY_CONVERSATION_ID": "parent-clean", "ANTIGRAVITY_APP_DATA_DIR": agy_home})
     check("agy audit picks up ANTIGRAVITY_CONVERSATION_ID and ANTIGRAVITY_APP_DATA_DIR",
           rc == 0 and "2 agents, 1 pinned, 0 failing" in buf.getvalue(), buf.getvalue())
@@ -7221,7 +7243,7 @@ def _self_test() -> int:
         "not json\n",
     ])
     buf = io.StringIO()
-    rc = delegate_audit("parent-bad", None, buf, agy_table, audit_agents, agy_root=agy_home, env={})
+    rc = delegate_audit("parent-bad", None, buf, carbon_table, audit_agents, agy_root=agy_home, env={})
     text = buf.getvalue()
     check("agy audit catches served model drift on inherit, missing/spoofed DB, child write, truncation, and missing child",
           rc == 1
@@ -7236,6 +7258,66 @@ def _self_test() -> int:
           and "agent ? call step-1-8: missing (the session started it; no subagent record)" in text
           and "session transcript: 1 unreadable record(s)" in text
           and "delegate audit: 9 agents, 0 pinned, 10 failing" in text, text)
+
+    write_agy_log("sub-orch-plan", [{"type": "PLANNER_RESPONSE", "status": "DONE", "content": "ok"},
+                                      {"type": "PLANNER_RESPONSE", "status": "DONE", "content": "ok"}])
+    write_agy_db("sub-orch-plan", [
+        agy_gen_blob("gemini-pro-orchestrator", "Orchestrator (Carbon)", "sub-orch-plan", "parent-orch-clean"),
+        agy_gen_blob("gemini-pro-orchestrator", "Orchestrator (Carbon)", "sub-orch-plan", "parent-orch-clean",
+                     explicit_slug="gemini-pro-orchestrator"),
+    ])
+    write_agy_log("sub-orch-exec", [{"type": "PLANNER_RESPONSE", "status": "DONE", "content": "ok"}])
+    write_agy_db("sub-orch-exec", [
+        agy_gen_blob("gemini-flash-worker-agy", "Gemini Flash", "sub-orch-exec", "parent-orch-clean"),
+    ])
+    write_agy_log("parent-orch-clean", [
+        {"step_index": 1, "type": "PLANNER_RESPONSE", "status": "DONE", "tool_calls": [
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r1", "Prompt": "x"}},
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Role": "r2", "Prompt": "y"}},
+        ]},
+        agy_sub_created("sub-orch-plan"),
+        agy_sub_created("sub-orch-exec"),
+    ])
+    buf = io.StringIO()
+    rc = delegate_audit("parent-orch-clean", None, buf, agy_table, audit_agents, agy_root=agy_home, env={})
+    text = buf.getvalue()
+    check("agy orchestrator audit accepts Carbon planning and Hydrogen worker inherit turns",
+          rc == 0
+          and "agent sub-orch-plan type research requested inherit turns 2 served gemini-pro-orchestrator x2 effort auto x2: pinned" in text
+          and "agent sub-orch-exec type research requested inherit turns 1 served gemini-flash-worker-agy x1 effort auto x1: pinned" in text
+          and "delegate audit: 2 agents, 2 pinned, 0 failing" in text, text)
+
+    write_agy_log("sub-orch-flash", [{"type": "PLANNER_RESPONSE", "status": "DONE", "content": "ok"}])
+    write_agy_db("sub-orch-flash", [
+        agy_gen_blob("gemini-3.5-flash-lite", "Gemini 3.5 Flash Lite (Low)", "sub-orch-flash", "parent-orch-bad"),
+    ])
+    write_agy_log("sub-orch-carbon-low", [{"type": "PLANNER_RESPONSE", "status": "DONE", "content": "ok"}])
+    write_agy_db("sub-orch-carbon-low", [
+        agy_gen_blob("gemini-4-carbon", "Gemini 4 Carbon (Low)", "sub-orch-carbon-low", "parent-orch-bad"),
+    ])
+    write_agy_log("sub-orch-bad-display", [{"type": "PLANNER_RESPONSE", "status": "DONE", "content": "ok"}])
+    write_agy_db("sub-orch-bad-display", [
+        agy_gen_blob("gemini-pro-orchestrator", "Not Orchestrator", "sub-orch-bad-display", "parent-orch-bad"),
+    ])
+    write_agy_log("parent-orch-bad", [
+        {"step_index": 1, "type": "PLANNER_RESPONSE", "status": "DONE", "tool_calls": [
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "flash_lite", "Role": "r1", "Prompt": "x"}},
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r2", "Prompt": "y"}},
+            {"name": "invoke_subagent", "args": {"TypeName": "research", "Model": "inherit", "Role": "r3", "Prompt": "z"}},
+        ]},
+        agy_sub_created("sub-orch-flash"),
+        agy_sub_created("sub-orch-carbon-low"),
+        agy_sub_created("sub-orch-bad-display"),
+    ])
+    buf = io.StringIO()
+    rc = delegate_audit("parent-orch-bad", None, buf, agy_table, audit_agents, agy_root=agy_home, env={})
+    text = buf.getvalue()
+    check("agy orchestrator audit rejects flash_lite, non-orchestrator carbon-low, and spoofed effortless display names",
+          rc == 1
+          and "agent sub-orch-flash type research requested flash_lite turns 1 served gemini-3.5-flash-lite-low x1 effort low x1: below-bar" in text
+          and "agent sub-orch-carbon-low type research requested inherit turns 1 served gemini-4-carbon-low x1 effort low x1: off-pin" in text
+          and "agent sub-orch-bad-display type research requested inherit turns 1 served - effort - unreadable 1: unmeasured" in text
+          and "delegate audit: 3 agents, 0 pinned, 3 failing" in text, text)
 
     write_agy_log("parent-empty", [{"step_index": 0, "type": "USER_INPUT", "status": "DONE", "content": "hi"}])
     with contextlib.redirect_stderr(io.StringIO()):
@@ -7273,7 +7355,7 @@ def _self_test() -> int:
         check("checked-in pin validates", False, str(exc))
     for argv_case, expected in ((["validate"], "delegate sonnet -> "), (["delegate"], "sonnet "),
                                 (["delegate", "effort"], "high"), (["show"], "agent isotone-"),
-                                (["writer"], "gemini-4-carbon-medium google"),
+                                (["writer"], "gemini-pro-orchestrator google"),
                                 (["writer", "agent"], "agy")):
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):

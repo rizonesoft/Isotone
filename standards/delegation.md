@@ -14,7 +14,7 @@ Subagents read and run; they never write. In Google Antigravity (`agy`), `.agent
 
 | Role | Runs | Owns |
 | ---- | ---- | ---- |
-| **Lead** | The writer session, `WRITER` in `scripts/panel_slots.py` (`agy` on `gemini-4-carbon-medium`, the `agy` route in `.conclave/reviewers.toml`) | Architecture, plan corrections, consequential code, integration, every commit and push, every record (`Started:`, findings, stamps, run files), final acceptance |
+| **Lead** | The writer session, `WRITER` in `scripts/panel_slots.py` (`agy` on `gemini-pro-orchestrator`, the `agy` route in `.conclave/reviewers.toml`) | Architecture, plan corrections, consequential code, integration, every commit and push, every record (`Started:`, findings, stamps, run files), final acceptance |
 | **Delegates** | In Antigravity, the read-only `research` subagent (`invoke_subagent` on `inherit`, gated by `.agents/hooks.json` and verified by `delegate-audit` against `<appDataDir>/conversations/<conversationId>.db`) and bounded `run_command` verification tasks writing logs under `build/`; the retained `.claude/agents/*.md` definitions remain pinned to `DELEGATE` in `scripts/panel_slots.py` | One bounded brief each; never a tracked change, a commit, a record, or a verdict |
 | **Panel** | The reviewer `.conclave/reviewers.toml` routes for the `agy` writer (`astra`: GPT-6 Astra via `codex`), run by `scripts/review-dispatch.py --writer agy` | Every recorded review verdict, unchanged; the dispatcher enforces cross-family independence between the Google writer and the OpenAI reviewer |
 
