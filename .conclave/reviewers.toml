@@ -14,21 +14,24 @@
 schema_version = 1
 
 # GPT-6 Astra through the Codex CLI, read-only sandbox (operator decision 2026-11-10: "The reviewer should be GPT6
-# Astra."). Effort is medium (operator decision 2026-10-23: "set the reviewer effort level to medium").
+# Astra."). Standalone effort is medium (operator decision 2026-10-23); scheduled passes use CLI configuration.
 [reviewers.astra]
 cli = "codex"
 model = "gpt-6-astra"
 effort = "medium"
 
+# Codex independent reviewer: Orchestrator (Carbon), operator decision 2026-11-14.
 [reviewers.carbon]
 cli = "agy"
-model = "gemini-4-carbon-medium"
+model = "gemini-pro-orchestrator"
 
 [routes]
 codex = ["carbon"]
 agy = ["astra"]
 claude = ["astra"]
 
+# Orchestrator accepts no scheduled effort override. The shared schedule therefore
+# passes no effort for any route, including Astra; its CLI configuration decides.
 [schedule]
 policy = "three-pass"
 pass_cap = 33
@@ -40,17 +43,13 @@ blocking = ["P1", "P2"]
 docs-drift = "Does the range update every README, document, standard, skill and source comment that describes behaviour it changed? Name each one that still describes the old behaviour, with file:line and the sentence that is now false. A text that states the old behaviour is at least P2: the writer and the reviewers act on these documents, so a false one is a wrong result waiting to happen, and the stamp is refused while one remains."
 
 [schedule.plan]
-effort = "medium"
 lenses = ["plan"]
 
 [[schedule.rounds]]
-effort = "medium"
 lenses = ["adversarial", "consistency", "integration", "quality", "optimization", "source-defect", "design", "docs-drift"]
 
 [schedule.completion]
-effort = "medium"
 lenses = ["plan-delivery", "record"]
 
 [schedule.reconciliation]
-effort = "medium"
 lenses = ["adversarial", "integration", "plan-delivery", "record"]
