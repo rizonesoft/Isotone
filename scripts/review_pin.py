@@ -376,7 +376,7 @@ LENSES = {
                     "measured target does it miss?",
     "record": "Does the evidence match what ran, with owned deferrals and an earned flip of every item?",
 }
-STEP_KEYS = {"effort", "lenses"}
+STEP_KEYS = {"effort", "lenses", "effort_by_cli", "followup_effort_by_cli"}
 ROTATION_KEYS = {"plan", "completion", "rounds", "rotation", "escalation", "severity_stop_after"}
 THREE_PASS_KEYS = {"policy", "plan", "completion", "rounds", "reconciliation"}
 THREE_PASS_OPTIONAL = {"pass_cap", "no_progress_cap", "blocking", "lenses", "conditional"}
@@ -408,6 +408,17 @@ def check_step_keys(where, step, lenses="required"):
 def check_step_effort(where, step, efforts):
     if "effort" in step and not _one_of(step["effort"], efforts):
         raise Refused(f"[schedule] {where} needs effort = one of {', '.join(efforts)}")
+    for key in ("effort_by_cli", "followup_effort_by_cli"):
+        if key not in step:
+            continue
+        values = step[key]
+        if not isinstance(values, dict) or not values or any(
+                cli not in EFFORTS or not _one_of(value, EFFORTS[cli]) for cli, value in values.items()):
+            raise Refused(f"[schedule] {where} {key} needs supported CLI names and valid efforts; agy takes none")
+        if key == "followup_effort_by_cli" and not where.startswith("round "):
+            raise Refused(f"[schedule] {where} followup_effort_by_cli applies only to rounds")
+        if "effort" in step:
+            raise Refused(f"[schedule] {where} cannot mix effort and {key}")
 
 
 def check_step_lenses(where, step, table):
@@ -707,9 +718,10 @@ def lenses_for(schedule, kind, changed_paths=(), surface=True):
     return names
 
 
-def scheduled(schedule, kind, rounds, surface, changed_paths=()):
+def scheduled(schedule, kind, rounds, surface, changed_paths=(), reviewer_cli=None):
     """The effort and lenses for the next pass, from the pin's schedule and the rounds already recorded. `effort` is
-    None for a step that sets none.
+    None for a step that sets none for the selected reviewer CLI. `effort_by_cli` scopes a step to supported
+    effort-taking CLIs; `followup_effort_by_cli` changes subsequent returned rounds without changing lenses.
 
     Three-pass: the pass's lenses with its conditional ones (`lenses_for`); the one round's position is 1.
 
@@ -722,11 +734,11 @@ def scheduled(schedule, kind, rounds, surface, changed_paths=()):
     if kind != "round":
         step = schedule[kind]
         names = lenses_for(schedule, kind, changed_paths, surface) if three_pass else list(step.get("lenses", []))
-        return {"position": None, "effort": step.get("effort"), "lenses": names, "escalated": False}
+        return {"position": None, "effort": step_effort(step, reviewer_cli), "lenses": names, "escalated": False}
     returned = [r for r in rounds if returned_review(r)]
     position = len(returned) + 1
     if three_pass:
-        return {"position": position, "effort": schedule["rounds"][0].get("effort"),
+        return {"position": position, "effort": step_effort(schedule["rounds"][0], reviewer_cli, position > 1),
                 "lenses": lenses_for(schedule, "round", changed_paths, surface), "escalated": False}
     last = returned[-1] if returned else None
     if last is not None and last.get("effort") == "low" and highest(last.get("review")) == "P1":
@@ -736,11 +748,20 @@ def scheduled(schedule, kind, rounds, surface, changed_paths=()):
     else:
         rotation = [n for n in schedule["rotation"]["lenses"] if surface or n != "design"] \
             or schedule["rotation"]["lenses"]
-        step = {"effort": schedule["rotation"].get("effort"),
+        step = {**schedule["rotation"],
                 "lenses": [rotation[(position - len(schedule["rounds"]) - 1) % len(rotation)]]}
         escalated = False
-    return {"position": position, "effort": step.get("effort"), "lenses": list(step["lenses"]),
+    return {"position": position, "effort": step_effort(step, reviewer_cli, position > 1), "lenses": list(step["lenses"]),
             "escalated": escalated}
+
+
+def step_effort(step, reviewer_cli, followup=False):
+    """Resolve CLI-scoped efforts without sending another CLI's override to Gemini."""
+    if followup and reviewer_cli in step.get("followup_effort_by_cli", {}):
+        return step["followup_effort_by_cli"][reviewer_cli]
+    if "effort_by_cli" in step:
+        return step["effort_by_cli"].get(reviewer_cli)
+    return step.get("effort")
 
 
 def lens_block(plan, schedule=None):

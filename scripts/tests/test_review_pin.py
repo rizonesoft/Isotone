@@ -118,6 +118,21 @@ def load(text):
 
 
 class Cases(unittest.TestCase):
+    def test_cli_scoped_effort_and_followups_keep_gemini_independent(self):
+        text = THREE_PASS.replace('effort = "medium"\n', '')
+        text = text.replace('[schedule.plan]', '[schedule.plan]\neffort_by_cli = { codex = "medium" }')
+        text = text.replace('[[schedule.rounds]]', '[[schedule.rounds]]\neffort_by_cli = { codex = "medium" }\nfollowup_effort_by_cli = { codex = "low" }')
+        schedule = load(text)["schedule"]
+        returned = {"reviewer": "astra", "writer": "claude", "cli": "codex",
+                    "review": "HIGHEST: none\nOVERALL: approve"}
+        for cli, first, followup in (("codex", "medium", "low"), ("agy", None, None)):
+            self.assertEqual(review_pin.scheduled(schedule, "round", [], False, reviewer_cli=cli)["effort"], first)
+            self.assertEqual(review_pin.scheduled(schedule, "round", [returned], False, reviewer_cli=cli)["effort"], followup)
+            self.assertEqual(review_pin.scheduled(schedule, "round", [{"reviewer": None}], False,
+                                                  reviewer_cli=cli)["effort"], first)
+        for bad in ('{ agy = "medium" }', '{ codex = "extreme" }', '"medium"'):
+            self.refuses(text.replace('{ codex = "low" }', bad), 'followup_effort_by_cli')
+
     def refuses(self, text, *needles):
         self.assertNotIn(text, (ROTATION, THREE_PASS, EARLIER_THREE_PASS), "the edit matched nothing")
         with self.assertRaises(review_pin.Refused) as refused:

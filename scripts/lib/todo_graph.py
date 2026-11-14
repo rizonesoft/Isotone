@@ -585,6 +585,15 @@ def schedule_ok(root, data, ref, surface):
     three_pass = schedule.get("policy") == dispatch.THREE_PASS
     base = data["plan"]["candidate"]
 
+    def reviewer_cli(entry, candidate=base):
+        if entry.get("cli"):
+            return entry["cli"]
+        # Failed attempts retain the writer but no reviewer identity. Resolve the
+        # frozen route so replay still checks their scheduled effort correctly.
+        pin = committed_pin(root, candidate, ref)
+        routed = dispatch.review_pin.route_for(pin, entry["writer"])
+        return pin["reviewers"][routed]["cli"] if routed else None
+
     def changed(entry):
         return changed_paths(root, base, entry["candidate"], ref) if three_pass and entry.get("candidate") else []
 
@@ -630,7 +639,9 @@ def schedule_ok(root, data, ref, surface):
                 if "plan" in item["passes"]
                 for name in item["lenses"]
             ]
-        check(f"the plan review in {plan_report}", entry, dispatch.scheduled(attempt, "plan", [], surface), optional)
+        check(f"the plan review in {plan_report}", entry,
+              dispatch.scheduled(attempt, "plan", [], surface, reviewer_cli=reviewer_cli(entry, entry["candidate"])),
+              optional)
     completion = data["completion"]["report"]
     found = dispatch.read_findings((Path(root) / completion).read_bytes().decode("utf-8"))
     final_kind = (
@@ -649,14 +660,14 @@ def schedule_ok(root, data, ref, surface):
         check(
             f"the completion review in {completion}",
             entry,
-            dispatch.scheduled(schedule, "completion", [], surface, changed(entry)),
+            dispatch.scheduled(schedule, "completion", [], surface, changed(entry), reviewer_cli=reviewer_cli(entry)),
         )
     if three_pass:
         for entry in found["reconciliations"]:
             check(
                 f"the reconciliation review in {completion}",
                 entry,
-                dispatch.scheduled(schedule, "reconciliation", [], surface, changed(entry)),
+                dispatch.scheduled(schedule, "reconciliation", [], surface, changed(entry), reviewer_cli=reviewer_cli(entry)),
             )
     else:
         require(
@@ -669,7 +680,7 @@ def schedule_ok(root, data, ref, surface):
             check(
                 f"{report} round {entry['number']}",
                 entry,
-                dispatch.scheduled(schedule, "round", recorded[:i], surface, changed(entry)),
+                dispatch.scheduled(schedule, "round", recorded[:i], surface, changed(entry), reviewer_cli=reviewer_cli(entry)),
             )
     if three_pass:
         three_pass_ok(root, data, ref, found)

@@ -193,6 +193,18 @@ def fully_qualified(directory):
     return drive.startswith(("\\\\", "//")) or (len(drive) == 2 and rest[:1] in ("\\", "/"))
 
 
+def agy_review_settings(prompt_path):
+    """Session-only read permissions; headless AGY cannot prompt for Git inspection."""
+    revision = r"[0-9a-f]{40}(?:\^|~[0-9]+)?"
+    show = rf"^git --no-pager show --no-ext-diff --no-textconv {revision}(?::[A-Za-z0-9_./-]+)?$"
+    diff = rf"^git --no-pager diff --no-ext-diff --no-textconv {revision}(?:\.\.{revision}| {revision})$"
+    return {"permissions": {
+        "allow": [f"read_file({Path(prompt_path).resolve().as_posix()})",
+                  f"command(regex:{show})", f"command(regex:{diff})"],
+        "deny": ["write_file(*)", "mcp(*)", "execute_url(*)", "download_url(*)"],
+    }}
+
+
 def command(reviewer, executable, prompt, prompt_path, output_path, timeout, effort=None):
     """The argv and stdin for one read-only review. The model comes only from the pin, and the effort from the pin's
     reviewer or, when the pin has a [schedule], from the step it schedules for this pass (Antigravity takes none).
@@ -210,7 +222,8 @@ def command(reviewer, executable, prompt, prompt_path, output_path, timeout, eff
     shim = Path(executable).suffix.lower() in (".cmd", ".bat")
     if shim or len(prompt.encode()) > ARGV_PROMPT_LIMIT or len(prompt) > ARGV_PROMPT_LIMIT:
         text = f"Follow the review instructions in the file {prompt_path} exactly. Do not modify any file."
-    return [executable, "--model", model, "--mode", "plan", "--sandbox", "--print-timeout", f"{timeout}s",
+    return [executable, "--model", model, "--mode", "plan", "--sandbox",
+            "--settings", str(Path(output_path).with_name("agy-settings.json")), "--print-timeout", f"{timeout}s",
             f"-p={text}"], None
 
 
@@ -510,6 +523,13 @@ def review(pin, writer, prompt_path, timeout, plan=None, kind="round", keep=None
     appended = bool(lenses) or (three_pass and plan is not None)
     if appended:
         prompt = prompt.rstrip("\n") + lens_block(plan, schedule)
+        if reviewer["cli"] == "agy":
+            prompt += ("\nRead-only headless review: inspect workspace files with the file-reading tools. "
+                       "For Git inspection use exactly `git --no-pager show --no-ext-diff --no-textconv SHA` "
+                       "(optionally SHA:path) or `git --no-pager diff --no-ext-diff --no-textconv BASE TIP`, "
+                       "replacing SHA, BASE and TIP with full commit hashes. Run each command alone, "
+                       "without shell wrappers, pipes or redirects. These commands have session permission. "
+                       "Do not run tests, edit files, delegate, or use external tools.\n")
     scheduled_fields = {"effort": effort, "lenses": lenses} if plan else {}
 
     def none(reason):
@@ -530,6 +550,9 @@ def review(pin, writer, prompt_path, timeout, plan=None, kind="round", keep=None
             # The pointer an Antigravity shim gets must name the prompt with what the dispatcher appended to it.
             prompt_file = tmp / "prompt.md"
             prompt_file.write_text(prompt, encoding="utf-8", newline="\n")
+        if reviewer["cli"] == "agy":
+            # A file also avoids shell re-parsing of JSON when the CLI is a Windows shim.
+            (tmp / "agy-settings.json").write_text(json.dumps(agy_review_settings(prompt_file)), encoding="utf-8")
         argv, stdin_text = command(reviewer, executable, prompt, prompt_file, message_path, timeout, effort)
         with in_flight(writer, name, reviewer["cli"], reviewer["model"]):
             _, problem = run(argv, stdin_text, timeout, [stdout_path, message_path], stderr_path=stderr_path)
@@ -1249,7 +1272,11 @@ def main(argv=None):
                     raise Unrecorded(f"{args.record} cannot be read back (a round heading or line is not in the "
                                      f"format --record writes{unreadable_heading(existing)}; {RESERVED_NAMES}), so "
                                      f"no round was run")
-            plan = scheduled(schedule, args.kind, rounds, args.surface, paths)
+            routed = review_pin.route_for(pin, args.writer)
+            if routed is None:
+                raise Refused(f"the reviewer pin has no route for writer {args.writer!r}")
+            plan = scheduled(schedule, args.kind, rounds, args.surface, paths,
+                             reviewer_cli=pin["reviewers"][routed]["cli"])
         result = review(pin, args.writer, args.prompt, args.timeout, plan, args.kind, keep=args.keep)
     except (Refused, Unrecorded, OSError) as exc:
         print("review-dispatch refused: " + str(exc), file=sys.stderr)

@@ -613,6 +613,31 @@ class SectionContract(ThreePass):
 
     TODO = "todo/00-workspace/TODO-01-fixture.md"
 
+    def test_scoped_efforts_dispatch_and_replay_failed_attempts_and_followups(self):
+        pin = PIN.replace('effort = "medium"', 'effort_by_cli = { codex = "medium" }')
+        pin = pin.replace('[[schedule.rounds]]', '[[schedule.rounds]]\nfollowup_effort_by_cli = { codex = "low" }')
+        self.base = self.commit("scoped pin", {".conclave/reviewers.toml": pin})
+        self.record = self.repo / "docs/reviews/independent/scoped.md"
+        self.assertEqual(self.ok("plan", self.base)["effort"], "medium")
+        result, missed = self.dispatch("--kind", "round", "--writer", "claude", "--prompt", str(self.prompt),
+                                       "--candidate", self.base, "--record", str(self.record), codex="empty")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(missed["effort"], "medium")
+        self.assertEqual(self.ok("round", self.base)["effort"], "medium")
+        self.assertEqual(self.ok("round", self.base)["effort"], "low")
+        self.assertIn("model_reasoning_effort=low", self.calls()[-1]["argv"])
+        self.ok("completion", self.base)
+        relative = self.record.relative_to(self.repo).as_posix()
+        data = {"schedule": self.module().load_pin(self.repo / ".conclave/reviewers.toml")["schedule"],
+                "plan": {"candidate": self.base, "report": relative},
+                "completion": {"candidate": self.base, "report": relative}, "reviews": [{"report": relative}]}
+        lib = self.lib()
+        with unittest.mock.patch.object(lib, "three_pass_ok"):
+            lib.schedule_ok(self.repo, data, "D00 T01 \u00a71", False)
+            self.record.write_text(self.record.read_text().replace("- Effort: low", "- Effort: medium"))
+            with self.assertRaisesRegex(lib.Refused, "schedule expects"):
+                lib.schedule_ok(self.repo, data, "D00 T01 \u00a71", False)
+
     def lib(self):
         import importlib.util
         spec = importlib.util.spec_from_file_location(

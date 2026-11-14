@@ -1327,6 +1327,22 @@ class MultiCli(Harness):
         argv, _ = self.module().command(reviewer, "/usr/bin/agy", "short prompt", Path("/p.md"), Path("o"), 60)
         self.assertEqual(argv[-1], "-p=short prompt")
 
+    def test_gemini_has_session_read_permissions_without_blanket_approval(self):
+        with tempfile.TemporaryDirectory() as folder:
+            prompt = Path(folder) / "prompt.md"
+            prompt.write_text("Review only.")
+            module = self.module()
+            settings = module.agy_review_settings(prompt)
+            permissions = settings["permissions"]
+            self.assertIn("write_file(*)", permissions["deny"])
+            self.assertIn("read_file(" + prompt.resolve().as_posix() + ")", permissions["allow"])
+            rules = [r[len("command(regex:"):-1] for r in permissions["allow"] if r.startswith("command(regex:")]
+            safe = "git --no-pager show --no-ext-diff --no-textconv " + "a" * 40
+            self.assertTrue(any(re.fullmatch(r, safe) for r in rules))
+            for bad in (safe + " > stolen.txt", safe + "; git reset --hard", safe + " --output=changed",
+                        "git push", "git config core.pager evil", "powershell -Command Remove-Item *"):
+                self.assertFalse(any(re.fullmatch(r, bad) for r in rules), bad)
+
     def test_a_scheduled_effort_reaches_claude_and_never_antigravity(self):
         module = self.module()
         claude = {"cli": "claude", "model": "claude-sonnet-5-5", "effort": "high"}
