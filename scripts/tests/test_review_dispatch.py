@@ -1332,6 +1332,10 @@ class MultiCli(Harness):
             prompt = Path(folder) / "prompt.md"
             prompt.write_text("Review only.")
             module = self.module()
+            argv, _ = module.command({"cli": "agy", "model": "gemini-pro-orchestrator"},
+                                     "agy", "/plan is quoted review content", prompt, Path(folder) / "out.md", 60)
+            self.assertIn("--disable-slash-commands", argv)
+            self.assertNotIn("--dangerously-skip-permissions", argv)
             settings = module.agy_review_settings(prompt)
             permissions = settings["permissions"]
             self.assertIn("write_file(*)", permissions["deny"])

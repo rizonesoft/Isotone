@@ -222,7 +222,7 @@ def command(reviewer, executable, prompt, prompt_path, output_path, timeout, eff
     shim = Path(executable).suffix.lower() in (".cmd", ".bat")
     if shim or len(prompt.encode()) > ARGV_PROMPT_LIMIT or len(prompt) > ARGV_PROMPT_LIMIT:
         text = f"Follow the review instructions in the file {prompt_path} exactly. Do not modify any file."
-    return [executable, "--model", model, "--mode", "plan", "--sandbox",
+    return [executable, "--model", model, "--mode", "plan", "--sandbox", "--disable-slash-commands",
             "--settings", str(Path(output_path).with_name("agy-settings.json")), "--print-timeout", f"{timeout}s",
             f"-p={text}"], None
 
