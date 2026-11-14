@@ -118,6 +118,13 @@ def load(text):
 
 
 class Cases(unittest.TestCase):
+    def test_scoped_effort_faults_are_reported_independently(self):
+        text = THREE_PASS.replace('[[schedule.rounds]]\neffort = "medium"',
+                                  '[[schedule.rounds]]\neffort_by_cli = {}\nfollowup_effort_by_cli = {}')
+        faults = review_pin.faults(data=text.encode())
+        self.assertTrue(any('effort_by_cli needs' in f for f in faults))
+        self.assertTrue(any('followup_effort_by_cli needs' in f for f in faults))
+
     def test_cli_scoped_effort_and_followups_keep_gemini_independent(self):
         text = THREE_PASS.replace('effort = "medium"\n', '')
         text = text.replace('[schedule.plan]', '[schedule.plan]\neffort_by_cli = { codex = "medium" }')
@@ -307,7 +314,7 @@ class ThreePass(Cases):
                      "[schedule] plan needs", "(unknown: efort)")
         self.refuses(ROTATION.replace('[schedule.completion]\neffort = "medium"',
                                       '[schedule.completion]\neffort = "medium"\nlenses = ["record"]'),
-                     "[schedule] completion needs only effort", "(unknown: lenses)")
+                     "[schedule] completion needs optional effort or effort_by_cli", "(unknown: lenses)")
         self.refuses(ROTATION.replace('[schedule.plan]\neffort = "medium"\nlenses = ["plan"]',
                                       '[schedule.plan]\neffort = "medium"'),
                      "[schedule] plan needs", "(missing: lenses)")

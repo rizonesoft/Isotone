@@ -1,17 +1,11 @@
-# Codex campaign
+# Codex reviewer only
 
-Run `scripts/start-campaign.ps1 -Runner codex`, or open "Isotone Codex campaign" on the Windows Desktop. This starts Codex as writer using its configured model at medium reasoning effort and its existing account. Claude credentials are never required or passed to it.
+The Codex campaign launcher was retired by the operator on 2026-11-14. Only Claude Code and Antigravity write in Isotone, one session at a time. Codex runs exclusively as their independent headless reviewer through the repository dispatcher. The Antigravity reviewer route is removed.
 
-Codex follows `.codex/skills/process-plan/SKILL.md`, using the existing plan, campaign guard and review dispatcher. Its Stop hook is `.codex/hooks.json`; approve this project's hook in Codex after changing it. Its reviewer route is `codex -> carbon`, preserving the project's review schedule. Only one writer may own the tree. A stopped or crashed campaign is not restarted by a background service.
+Start a campaign with `pwsh -File scripts/start-campaign.ps1 -Runner agy` (Orchestrator Carbon, `gemini-pro-orchestrator`) or `-Runner claude` (latest Opus, medium effort). Run `pwsh -File scripts/start-campaign.ps1 -InstallShortcut` to refresh the Desktop's Isotone Carbon and Isotone Claude campaign shortcuts and remove the retired Codex shortcut. `-Runner codex` is rejected. No campaign starts during shortcut installation.
 
-The owner authorised Codex as an additional campaign writer on 2026-11-14. Existing Claude and Carbon launchers remain available. The Codex-specific session and timer rules in its process-plan skill take precedence over the Claude-specific examples in the shared workflow documents.
+Both writer routes in `.conclave/reviewers.toml` select only `astra`, model `gpt-6-astra`, through `codex`, without fallback. Build review prompts through `scripts/review-prompt.py` and dispatch with `scripts/review-dispatch.py --writer agy` or `--writer claude`.
 
-## Independent reviewer pin (2026-11-14)
+The shared three-pass schedule retains every lens, the 33-pass cap and P1/P2 blocking policy. Plan, first returned implementation round and completion use medium effort; subsequent returned standalone rounds and reconciliation use low. Section reviews still permit one implementation round. Failed attempts do not advance effort. The dispatcher and receipt verifier share this rule, including the section's frozen pin. Historical receipts retain their recorded pins; no old verdict is rewritten as approval.
 
-Codex routes to the existing `carbon` reviewer: Orchestrator (Carbon), model `gemini-pro-orchestrator`, through the Antigravity CLI (`agy`). Run reviews through `scripts/review-prompt.py` and `scripts/review-dispatch.py --writer codex`; do not invoke the CLI directly. The `agy` and `claude` writer routes still use `astra` (`gpt-6-astra` through `codex`), with no fallback.
-
-The shared three-pass schedule keeps every lens, one round definition, the 33-pass cap and P1/P2 blocking policy. Effort is scoped by reviewer CLI: `effort_by_cli = { codex = "medium" }` applies to plan, first implementation round and completion; `followup_effort_by_cli = { codex = "low" }` applies to subsequent returned implementation rounds, and reconciliation uses low. Failed attempts do not advance the round effort. Orchestrator receives no effort override. The dispatcher and receipt verifier use the same selection rule, including the pin frozen at the section's plan candidate. Older pins retain their original scalar-effort semantics.
-
-Antigravity reviews run in plan mode with the sandbox, `--disable-slash-commands` (review text must not expand into CLI skills), and a temporary session-only `--settings` file. It permits reading the generated prompt and narrowly specified Git show/diff commands with full commit hashes, `--no-pager`, `--no-ext-diff` and `--no-textconv`. The generated prompt explains these commands. File writes, MCP calls, browser execution and downloads are denied. No global permission settings are changed and blanket tool approval is never enabled. This fixes the headless command-permission denial that caused the first empty reply. Permission matching follows [Google's CLI permission documentation](https://antigravity.google/docs/permissions).
-
-A bounded live check uses `--timeout 300` and records the dispatcher verdict. A timeout, empty reply, missing lens or malformed verdict is no review, never approval.
+A timeout, empty response, missing lens or malformed verdict is no review, never approval. The prior Gemini experiment returned blocking findings and is not approval of this role restoration. No further Gemini review is scheduled.

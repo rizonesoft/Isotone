@@ -1,41 +1,39 @@
-"""Codex admission uses the existing campaign slot and native CLI protocol."""
+"""Only Claude and Antigravity write; Codex is the pinned reviewer."""
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import Mock
 import campaign_guard as guard
+import panel_slots
+import review_pin
 
 
-class World:
-    def __init__(self):
-        self.calls = []
-
-    def live_sessions(self):
-        return []
-
-    def set_title(self, title):
-        pass
-
-    def run(self, argv, extra_env=None, runner=None):
-        self.calls.append((argv, runner))
-        return 0
-
-
-class CodexCampaign(unittest.TestCase):
-    def test_native_launch_and_slot_release(self):
+class WriterRoles(unittest.TestCase):
+    def test_codex_cannot_launch_or_take_slot(self):
         with tempfile.TemporaryDirectory() as root:
-            Path(root, "build").mkdir()
-            world = World()
-            code, message = guard.start(root, world, runner="codex")
-            self.assertEqual(code, 0, message)
-            args, runner = world.calls[0]
-            self.assertEqual(runner, "codex")
-            self.assertEqual(args[:3], ["--dangerously-bypass-approvals-and-sandbox", "-c", "model_reasoning_effort=medium"])
-            self.assertNotIn("--session-id", args)
+            world = Mock()
+            with self.assertRaises(guard.GuardError):
+                guard.start(root, world, runner="codex")
+            world.run.assert_not_called()
             self.assertFalse(guard.slot_held(root))
 
-    def test_resume_uses_codex_subcommand(self):
-        self.assertEqual(guard._resume_argv("codex", ["-c", "model_reasoning_effort=medium"], "thread", "continue"),
-                         ["resume", "thread", "-c", "model_reasoning_effort=medium", "continue"])
+    def test_two_writers_and_one_reviewer(self):
+        self.assertEqual(set(guard.RUNNERS), {"agy", "claude"})
+        self.assertEqual(set(panel_slots.WRITERS), {"agy", "claude"})
+        pin = review_pin.load_pin()
+        self.assertEqual(pin["routes"], {"agy": ["astra"], "claude": ["astra"]})
+        self.assertEqual(set(pin["reviewers"]), {"astra"})
+        self.assertEqual(pin["reviewers"]["astra"]["cli"], "codex")
+        self.assertEqual(pin["reviewers"]["astra"]["model"], "gpt-6-astra")
+        schedule = pin["schedule"]
+        self.assertEqual(schedule["rounds"][0]["effort_by_cli"], {"codex": "medium"})
+        self.assertEqual(schedule["rounds"][0]["followup_effort_by_cli"], {"codex": "low"})
+        self.assertEqual(schedule["pass_cap"], 33)
+
+    def test_no_codex_campaign_hook_or_skill(self):
+        root = Path(__file__).resolve().parents[1]
+        for name in (".codex/hooks.json", ".codex/skills/process-plan/SKILL.md", "scripts/codex-campaign-hook.py"):
+            self.assertFalse((root / name).exists(), name)
 
 
 if __name__ == "__main__":

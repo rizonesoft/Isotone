@@ -267,3 +267,9 @@ What does not change: every Test checkpoint is still quoted from a real run, eve
 - **ImageMagick**: delegates SVG to librsvg or its own MSVG renderer, whose fidelity varies by build.
 
 Chosen: resvg-py 0.5.0, with Pillow 12.3.0 to write the PNGs and fontTools 4.66.0 to read the font names, all pinned in `scripts/requirements-icons.txt`. They are build-time tools that never ship in an app, so they sit outside the dependency register `docs/dev/native-libraries.md`, which registers what the native apps link. Cost of change: one `render` function in `scripts/export-icons.py` and the test that renders independently in `scripts/tests/test_export_icons.py`; the committed rasters would be re-exported, and `--check` would name any pixel the new renderer draws differently.
+
+## 2026-11-14: Restore two writers and Codex-only review
+
+The operator retired the Codex writer and Antigravity reviewer experiment because its token cost and reviewer errors were unacceptable. Claude Code (latest Opus, medium effort) and Antigravity (Orchestrator Carbon, `gemini-pro-orchestrator`) are the only campaign writers, one at a time. Both route to GPT-6 Astra through Codex with no fallback. Codex campaign hooks, the campaign skill and its Desktop shortcut are removed; the launcher accepts only `agy` and `claude`.
+
+The existing review lenses, three-pass policy, 33-pass cap and P1/P2 blocking rules stay. Codex review uses medium for plan, first round and completion, and low for follow-up standalone rounds and reconciliation. Failed attempts do not advance effort. Historical review records remain evidence of what occurred, never implied approval. Reversal would require restoring the removed campaign integration and explicitly changing the reviewer routes.

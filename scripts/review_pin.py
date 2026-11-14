@@ -30,10 +30,12 @@ Three-pass (`policy = "three-pass"`): `plan`, exactly one `[[schedule.rounds]]` 
 
 Under three-pass a lens belongs to one of plan, the round and completion (reconciliation may repeat lenses). A
 conditional entry may not hand one of those owned lenses to another of the three; a lens that exists only in a
-conditional entry joins exactly the passes that entry names. An Antigravity reviewer's model name must end with
-every effort the schedule sets. `effort` is optional everywhere: with a schedule, the step alone decides, and a step
-without one passes no effort to the reviewer's CLI, whose own configuration then decides; without a schedule the
-reviewer's `effort` does, or the CLI's configuration when it has none. Standard library only.
+conditional entry joins exactly the passes that entry names. A step may set scalar `effort`, or scope efforts to
+supported CLIs with `effort_by_cli = { codex = "medium" }`; rounds may add `followup_effort_by_cli` for subsequent
+returned rounds. The scoped maps accept codex and claude, never agy. An Antigravity reviewer's model suffix must
+agree only with scalar scheduled efforts. With a schedule, the selected step and CLI decide; without a matching
+effort, no override is passed and the CLI configuration decides. Without a schedule, the reviewer's optional
+effort applies. Standard library only.
 """
 import argparse
 from pathlib import Path
@@ -197,7 +199,9 @@ def step_holds(holds, where, step, efforts, table, lenses):
     keys = holds(check_step_keys, where, step, lenses)
     if not isinstance(step, dict):
         return False
-    effort = holds(check_step_effort, where, step, efforts)
+    effort = holds(check_scalar_effort, where, step, efforts)
+    for key in ("effort_by_cli", "followup_effort_by_cli"):
+        effort = holds(check_scoped_effort, where, step, key) and effort
     names = holds(check_step_lenses, where, step, table)
     return keys and effort and names
 
@@ -395,8 +399,10 @@ def _lens_list(names, table):
 
 
 def check_step_keys(where, step, lenses="required"):
-    need = {"required": "lenses, and may set effort", "optional": "only effort and lenses",
-            "none": "only effort"}[lenses]
+    need = {"required": "lenses; optional effort or effort_by_cli", "optional": "optional effort or effort_by_cli and lenses",
+            "none": "optional effort or effort_by_cli"}[lenses]
+    if where.startswith("round "):
+        need += "; followup_effort_by_cli is optional"
     if not isinstance(step, dict) or set(step) - STEP_KEYS or (lenses == "required" and "lenses" not in step) \
             or (lenses == "none" and "lenses" in step):
         allowed = STEP_KEYS - ({"lenses"} if lenses == "none" else set())
@@ -405,20 +411,28 @@ def check_step_keys(where, step, lenses="required"):
                          if isinstance(step, dict) else ""))
 
 
-def check_step_effort(where, step, efforts):
+def check_scalar_effort(where, step, efforts):
     if "effort" in step and not _one_of(step["effort"], efforts):
         raise Refused(f"[schedule] {where} needs effort = one of {', '.join(efforts)}")
+
+
+def check_scoped_effort(where, step, key):
+    if key not in step:
+        return
+    values = step[key]
+    if not isinstance(values, dict) or not values or any(
+            cli not in EFFORTS or not _one_of(value, EFFORTS[cli]) for cli, value in values.items()):
+        raise Refused(f"[schedule] {where} {key} needs supported CLI names and valid efforts; agy takes none")
+    if key == "followup_effort_by_cli" and not where.startswith("round "):
+        raise Refused(f"[schedule] {where} followup_effort_by_cli applies only to rounds")
+    if "effort" in step:
+        raise Refused(f"[schedule] {where} cannot mix effort and {key}")
+
+
+def check_step_effort(where, step, efforts):
+    check_scalar_effort(where, step, efforts)
     for key in ("effort_by_cli", "followup_effort_by_cli"):
-        if key not in step:
-            continue
-        values = step[key]
-        if not isinstance(values, dict) or not values or any(
-                cli not in EFFORTS or not _one_of(value, EFFORTS[cli]) for cli, value in values.items()):
-            raise Refused(f"[schedule] {where} {key} needs supported CLI names and valid efforts; agy takes none")
-        if key == "followup_effort_by_cli" and not where.startswith("round "):
-            raise Refused(f"[schedule] {where} followup_effort_by_cli applies only to rounds")
-        if "effort" in step:
-            raise Refused(f"[schedule] {where} cannot mix effort and {key}")
+        check_scoped_effort(where, step, key)
 
 
 def check_step_lenses(where, step, table):
@@ -723,7 +737,8 @@ def scheduled(schedule, kind, rounds, surface, changed_paths=(), reviewer_cli=No
     None for a step that sets none for the selected reviewer CLI. `effort_by_cli` scopes a step to supported
     effort-taking CLIs; `followup_effort_by_cli` changes subsequent returned rounds without changing lenses.
 
-    Three-pass: the pass's lenses with its conditional ones (`lenses_for`); the one round's position is 1.
+    Three-pass: the pass's lenses with its conditional ones (`lenses_for`). A section has one returned round;
+    standalone reviews advance the position after each returned round and may use lower follow-up effort.
 
     Rotation: the position counts returned reviews only (`returned_review`): an outage, a self-review and a reply
     without the final OVERALL line do not move it. Rounds past the fixed list rotate through `rotation`'s lenses, one

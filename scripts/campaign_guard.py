@@ -71,7 +71,7 @@ SETTINGS = os.path.join(REPO, ".claude", "settings.json")
 AGY_HOOKS = os.path.join(REPO, ".agents", "hooks.json")
 SESSION = "11111111-2222-3333-4444-555555555555"
 RUN_FILE = "docs/phase-runs/2099-01-01-phase-0.md"
-RUNNERS = ("agy", "claude", "codex")
+RUNNERS = ("agy", "claude")
 END_REASONS = ("closeout", "park", "plan-done", "operator-stop", "escalation", "stall")
 LOCK_WAIT = 10.0
 MAX_BLOCKS_WITHOUT_PROGRESS = 3
@@ -229,8 +229,6 @@ def _session_runner(root: str, session: str, previous: dict) -> str:
         return str(launch["runner"])
     if previous.get("session_id") == session and previous.get("runner") in RUNNERS:
         return str(previous["runner"])
-    if session and os.environ.get("CODEX_THREAD_ID") == session:
-        return "codex"
     if session and os.environ.get("CLAUDE_CODE_SESSION_ID") == session:
         return "claude"
     return "agy"
@@ -1440,10 +1438,7 @@ CLAUDE_RESUME_PROMPT = (
 # before it starts (`_World.set_title`), so both runners' windows read the same and say which repository they run.
 CAMPAIGN_NAME = "Isotone campaign"
 
-CODEX_GOAL = ("Finish the Isotone implementation plan 100% complete through process-plan: build, verify, independently review and stamp every runnable section, commit and push on main, then close or explicitly park the run under its existing rules. Act autonomously, self-heal defects at their owning layer, preserve quality and honour operator stops. Set this as your Codex session goal. Read docs/codex-campaign.md and .codex/skills/process-plan/SKILL.md. Use CODEX_THREAD_ID, --cron-id none and writer codex; wait for reviews and CI inside this session. Never use Claude timer tools or credentials.")
-
 RUNNER_TEXT = {
-    "codex": {"goal": CODEX_GOAL, "resume": CODEX_GOAL, "name": "Codex", "label": "Codex"},
     "agy": {"goal": GOAL, "resume": RESUME_PROMPT, "name": "Antigravity (`agy`)", "label": "Antigravity",
             "session": "<Conversation ID>", "cron": "`schedule`", "cron_list": "`manage_task` (`list`)",
             "terms": " conversation (pass this conversation's Conversation ID wherever `$CLAUDE_CODE_SESSION_ID` "
@@ -1456,8 +1451,6 @@ RUNNER_TEXT = {
 
 def handover_prompt(guard: dict, runner: str = "agy") -> str:
     """Prompt for a fresh campaign session in `runner` taking over an unfinished guard another runner owns."""
-    if runner == "codex":
-        return CODEX_GOAL + " The operator launched a handover from session " + str(guard.get("session_id")) + ". Preserve its run file " + str(guard.get("run_file")) + ", phase " + str(guard.get("phase")) + " and scope " + str(guard.get("scope", "plan")) + ". Mint a generation and acquire with your native thread id, --cron-id none and --handover operator-launch. Never start a new run file for this handover."
     text = RUNNER_TEXT[runner]
     old_runner = str(guard.get("runner") or "legacy")
     old_session = str(guard.get("session_id") or "<unknown>")
@@ -1858,8 +1851,6 @@ class _World:
             env, signin = claude_session_env(os.environ, signin_token(), extra_env)
         else:
             env, signin = agy_session_env(os.environ, extra_env)
-            if runner == "codex":
-                signin = "Sign-in: Codex local account."
         import signal
         print(signin, flush=True)
         # Ctrl+C belongs to the session in this console (it interrupts a turn there); this parent only waits.
@@ -1885,8 +1876,6 @@ def _launch_record(root: str, session: str) -> dict:
 
 def _resume_argv(runner: str, args: list[str], session: str, prompt: str) -> list[str]:
     """The command line that resumes `session` in `runner` with `prompt`, in the operator's console."""
-    if runner == "codex":
-        return ["resume", session, *args, prompt]
     if runner == "claude":
         return ["--resume", session, *args, prompt]
     return [*args, "--conversation", session, "-i", prompt]
@@ -2042,14 +2031,8 @@ def start(root: str, world=None, runner: str = "agy") -> tuple[int, str]:
                     return 3, f"The campaign is already running in session {owner}. Nothing was started."
                 return 3, (f"Another Antigravity or Claude session is open in this folder ({', '.join(live)}). One "
                            "session writes, so nothing was started: close it, then run this again.")
-            args = (["--dangerously-bypass-approvals-and-sandbox", "-c", "model_reasoning_effort=medium"]
-                    if runner == "codex" else [*LAUNCH_ARGS, "--model", writer_model(root, runner), *writer_effort(runner)])
-            if runner == "codex" and (guard is None or guard.get("runner") != "codex"):
-                prompt = handover_prompt(guard, runner) if guard else CODEX_GOAL
-                argv = [*args, prompt]
-                _write_json(_launch_path(root), {"runner": runner, "session_id": "", "args": args, "at": _utc_now()})
-                label = "Starting the Isotone campaign in Codex."
-            elif guard is not None and guard.get("runner") == runner:
+            args = [*LAUNCH_ARGS, "--model", writer_model(root, runner), *writer_effort(runner)]
+            if guard is not None and guard.get("runner") == runner:
                 session = str(guard.get("session_id", ""))
                 argv = _resume_argv(runner, args, session, text["resume"])
                 _write_json(_launch_path(root), {"runner": runner, "session_id": session, "args": args,
@@ -2104,7 +2087,7 @@ def start(root: str, world=None, runner: str = "agy") -> tuple[int, str]:
                                                  "at": _utc_now()})
                 label = f"Starting the Isotone campaign in {text['label']} (session {session})."
         print(label, flush=True)
-        if runner in ("agy", "codex"):  # Claude Code titles its own window from --name
+        if runner == "agy":  # Claude Code titles its own window from --name
             world.set_title(CAMPAIGN_NAME)
         code = world.run(argv, extra_env=extra_env, runner=runner)
         # The session is gone. It is recorded as ended, and nothing restarts it: not after a crash, not after a

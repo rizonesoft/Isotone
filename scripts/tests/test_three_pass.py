@@ -143,6 +143,19 @@ class ThreePass(Harness):
 
 
 class Chain(ThreePass):
+    def test_section_uses_medium_until_low_reconciliation(self):
+        pin = PIN.replace('effort = "medium"', 'effort_by_cli = { codex = "medium" }')
+        pin = pin.replace('[schedule.reconciliation]\neffort_by_cli = { codex = "medium" }',
+                          '[schedule.reconciliation]\neffort_by_cli = { codex = "low" }')
+        self.base = self.commit("scoped section", {".conclave/reviewers.toml": pin})
+        self.assertEqual(self.ok("plan", self.base)["effort"], "medium")
+        built = self.commit("build", {"src/app/a.py": "x = 1\n"})
+        self.assertEqual(self.ok("round", built)["effort"], "medium")
+        self.assertEqual(self.ok("completion", built, gaps=True, top="P2")["effort"], "medium")
+        fixed = self.commit("repair", {"src/app/a.py": "x = 2\n"})
+        self.assertEqual(self.ok("reconciliation", fixed)["effort"], "low")
+        self.assertIn("model_reasoning_effort=low", self.calls()[-1]["argv"])
+
     def test_a_whole_chain_runs_and_reads_back(self):
         plan = self.ok("plan", self.base, gaps=True, top="P2")
         self.assertEqual((plan["kind"], plan["candidate"], plan["lenses"], plan["effort"]),
@@ -637,6 +650,33 @@ class SectionContract(ThreePass):
             self.record.write_text(self.record.read_text().replace("- Effort: low", "- Effort: medium"))
             with self.assertRaisesRegex(lib.Refused, "schedule expects"):
                 lib.schedule_ok(self.repo, data, "D00 T01 \u00a71", False)
+
+    def test_failed_rotation_attempt_resolves_the_receipts_pin_not_the_plan_pin(self):
+        from test_review_pin import ROTATION
+        prefix, schedule = ROTATION.split("[schedule]", 1)
+        for effort in ("medium", "high", "low"):
+            schedule = schedule.replace(f'effort = "{effort}"', f'effort_by_cli = {{ codex = "{effort}" }}')
+        final_pin = prefix + "[schedule]" + schedule
+        initial_pin = final_pin.replace('cli = "codex"\nmodel = "gpt-6-astra"\neffort = "medium"',
+                                        'cli = "agy"\nmodel = "gemini-pro-orchestrator"')
+        self.base = self.commit("initial rotation", {".conclave/reviewers.toml": initial_pin})
+        self.record = self.repo / "docs/reviews/independent/rotation.md"
+        result, _ = self.dispatch("--kind", "plan", "--writer", "claude", "--prompt", str(self.prompt),
+                                  "--candidate", self.base, "--record", str(self.record),
+                                  agy="say", say=reply("plan", ["plan"]))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        tip = self.commit("rotation route changed", {".conclave/reviewers.toml": final_pin})
+        result, missed = self.dispatch("--kind", "round", "--writer", "claude", "--prompt", str(self.prompt),
+                                       "--candidate", tip, "--record", str(self.record), codex="empty")
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(missed["effort"], "high")
+        self.ok("round", tip)
+        self.ok("completion", tip)
+        relative = self.record.relative_to(self.repo).as_posix()
+        data = {"schedule": self.module().load_pin(self.repo / ".conclave/reviewers.toml")["schedule"],
+                "implementation_sha": tip, "plan": {"candidate": self.base, "report": relative},
+                "completion": {"candidate": tip, "report": relative}, "reviews": [{"report": relative}]}
+        self.lib().schedule_ok(self.repo, data, "D00 T01 \u00a71", False)
 
     def lib(self):
         import importlib.util

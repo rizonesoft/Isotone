@@ -221,7 +221,7 @@ def command(reviewer, executable, prompt, prompt_path, output_path, timeout, eff
     # it only ever gets a pointer to the prompt file. So does a prompt too long for a command line.
     shim = Path(executable).suffix.lower() in (".cmd", ".bat")
     if shim or len(prompt.encode()) > ARGV_PROMPT_LIMIT or len(prompt) > ARGV_PROMPT_LIMIT:
-        text = f"Follow the review instructions in the file {prompt_path} exactly. Do not modify any file."
+        text = f"Follow the review instructions in the file {Path(prompt_path).resolve().as_posix()} exactly. Do not modify any file."
     return [executable, "--model", model, "--mode", "plan", "--sandbox", "--disable-slash-commands",
             "--settings", str(Path(output_path).with_name("agy-settings.json")), "--print-timeout", f"{timeout}s",
             f"-p={text}"], None
@@ -523,13 +523,14 @@ def review(pin, writer, prompt_path, timeout, plan=None, kind="round", keep=None
     appended = bool(lenses) or (three_pass and plan is not None)
     if appended:
         prompt = prompt.rstrip("\n") + lens_block(plan, schedule)
-        if reviewer["cli"] == "agy":
-            prompt += ("\nRead-only headless review: inspect workspace files with the file-reading tools. "
-                       "For Git inspection use exactly `git --no-pager show --no-ext-diff --no-textconv SHA` "
-                       "(optionally SHA:path) or `git --no-pager diff --no-ext-diff --no-textconv BASE TIP`, "
-                       "replacing SHA, BASE and TIP with full commit hashes. Run each command alone, "
-                       "without shell wrappers, pipes or redirects. These commands have session permission. "
-                       "Do not run tests, edit files, delegate, or use external tools.\n")
+    if reviewer["cli"] == "agy":
+        appended = True
+        prompt += ("\nRead-only headless review: inspect workspace files with the file-reading tools. "
+                   "For Git inspection use exactly `git --no-pager show --no-ext-diff --no-textconv SHA` "
+                   "(optionally SHA:path) or `git --no-pager diff --no-ext-diff --no-textconv BASE TIP`, "
+                   "replacing SHA, BASE and TIP with full commit hashes. Run each command alone, "
+                   "without shell wrappers, pipes or redirects. These commands have session permission. "
+                   "Do not run tests, edit files, delegate, or use external tools.\n")
     scheduled_fields = {"effort": effort, "lenses": lenses} if plan else {}
 
     def none(reason):
@@ -541,7 +542,7 @@ def review(pin, writer, prompt_path, timeout, plan=None, kind="round", keep=None
     if executable is None:
         return none(f"{reviewer['cli']} is not installed")
     text = None
-    tmp = Path(tempfile.mkdtemp())
+    tmp = Path(tempfile.mkdtemp()).resolve()
     stdout_path, message_path = tmp / "stdout.txt", tmp / "last-message.md"
     stderr_path = tmp / "stderr.txt" if keep is not None else None
     try:

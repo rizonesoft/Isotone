@@ -1,6 +1,6 @@
 # Independent reviewers for this repository, read by scripts/review_pin.py and scripts/review-dispatch.py.
 #
-# Operator decision 2026-11-10: Antigravity (`agy`) on Gemini 4 Carbon (Medium) (`gemini-4-carbon-medium`, pinned in
+# Operator decision 2026-11-10: Antigravity (`agy`) on Orchestrator (Carbon) (`gemini-pro-orchestrator`, pinned in
 # `scripts/panel_slots.py`) takes over from Claude Code as the writer in this repository. Operator decision 2026-11-10:
 # the reviewer is GPT-6 Astra always, whichever of Antigravity (`agy`) or Claude Code (`claude`) wrote the work, so
 # each route names `astra` alone with no fallback (operator decisions 2026-09-25, 2026-10-21, and 2026-10-23).
@@ -20,17 +20,11 @@ cli = "codex"
 model = "gpt-6-astra"
 effort = "medium"
 
-# Codex independent reviewer: Orchestrator (Carbon), operator decision 2026-11-14.
-[reviewers.carbon]
-cli = "agy"
-model = "gemini-pro-orchestrator"
-
 [routes]
-codex = ["carbon"]
 agy = ["astra"]
 claude = ["astra"]
 
-# Effort is scoped to the Codex reviewer CLI; Orchestrator receives no effort override.
+# Only Codex reviews; its first round is medium and follow-up rounds are low.
 [schedule]
 policy = "three-pass"
 pass_cap = 33

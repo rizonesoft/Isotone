@@ -585,7 +585,9 @@ def schedule_ok(root, data, ref, surface):
     three_pass = schedule.get("policy") == dispatch.THREE_PASS
     base = data["plan"]["candidate"]
 
-    def reviewer_cli(entry, candidate=base):
+    route_sha = data.get("schedule_sha", base if three_pass else data.get("implementation_sha", base))
+
+    def reviewer_cli(entry, candidate=route_sha):
         if entry.get("cli"):
             return entry["cli"]
         # Failed attempts retain the writer but no reviewer identity. Resolve the

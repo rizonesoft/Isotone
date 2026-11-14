@@ -1296,9 +1296,11 @@ class MultiCli(Harness):
         if os.name == "nt":
             # The fake is a .cmd shim on Windows, so the prompt must arrive by file, never as argument text.
             self.assertTrue(call["argv"][-1].startswith("-p=Follow the review instructions in the file "))
-            self.assertEqual(call["from_file"], self.prompt.read_text())
+            self.assertTrue(call["from_file"].startswith(self.prompt.read_text()))
+            self.assertIn("Read-only headless review:", call["from_file"])
         else:
-            self.assertEqual(call["argv"][-1], "-p=" + self.prompt.read_text())
+            self.assertTrue(call["argv"][-1].startswith("-p=" + self.prompt.read_text()))
+            self.assertIn("Read-only headless review:", call["argv"][-1])
 
     def test_sonnet_reviews_gemini_work_in_plan_mode(self):
         result, summary = self.dispatch("--writer", "gemini", "--prompt", str(self.prompt))
@@ -1316,16 +1318,28 @@ class MultiCli(Harness):
         self.dispatch("--writer", "codex", "--prompt", str(self.prompt))
         (call,) = self.calls()
         self.assertTrue(call["argv"][-1].startswith("-p=Follow the review instructions in the file "))
-        self.assertEqual(call["from_file"], "x" * 150_000)
+        self.assertTrue(call["from_file"].startswith("x" * 150_000))
+        self.assertIn("Read-only headless review:", call["from_file"])
 
     def test_a_windows_shim_never_gets_prompt_text_in_its_arguments(self):
         reviewer = {"cli": "agy", "model": "gemini-4-argon-high"}
         argv, stdin = self.module().command(reviewer, "C:/tools/agy.cmd", "x & del *", Path("C:/p.md"), Path("o"), 60)
-        self.assertEqual(argv[-1], f"-p=Follow the review instructions in the file {Path('C:/p.md')} exactly. "
+        self.assertEqual(argv[-1], f"-p=Follow the review instructions in the file {Path('C:/p.md').resolve().as_posix()} exactly. "
                                    "Do not modify any file.")
         self.assertIsNone(stdin)
         argv, _ = self.module().command(reviewer, "/usr/bin/agy", "short prompt", Path("/p.md"), Path("o"), 60)
         self.assertEqual(argv[-1], "-p=short prompt")
+
+    def test_gemini_completion_without_lenses_gets_command_instructions(self):
+        pin = self.repo / ".conclave/reviewers.toml"
+        schedule = SCHEDULED_PIN[SCHEDULED_PIN.index("[schedule]"):]
+        pin.write_text(pin.read_text() + "\n" + schedule)
+        result, summary = self.dispatch("--writer", "codex", "--kind", "completion", "--candidate", "a" * 40,
+                                        "--prompt", str(self.prompt), agy="completion")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        call = self.calls()[-1]
+        sent = call["from_file"] if os.name == "nt" else call["argv"][-1]
+        self.assertIn("Read-only headless review:", sent)
 
     def test_gemini_has_session_read_permissions_without_blanket_approval(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -1346,6 +1360,18 @@ class MultiCli(Harness):
             for bad in (safe + " > stolen.txt", safe + "; git reset --hard", safe + " --output=changed",
                         "git push", "git config core.pager evil", "powershell -Command Remove-Item *"):
                 self.assertFalse(any(re.fullmatch(r, bad) for r in rules), bad)
+
+    def test_gemini_prompt_pointer_and_permission_use_the_same_canonical_path(self):
+        with tempfile.TemporaryDirectory(prefix="review (paths) ") as folder:
+            child = Path(folder) / "child"
+            child.mkdir()
+            prompt = child / ".." / "prompt.md"
+            module = self.module()
+            argv, _ = module.command({"cli": "agy", "model": "gemini-pro-orchestrator"},
+                                     "agy.cmd", "review", prompt, Path(folder) / "out.md", 60)
+            canonical = prompt.resolve().as_posix()
+            self.assertIn(f"file {canonical} exactly.", argv[-1])
+            self.assertIn(f"read_file({canonical})", module.agy_review_settings(prompt)["permissions"]["allow"])
 
     def test_a_scheduled_effort_reaches_claude_and_never_antigravity(self):
         module = self.module()

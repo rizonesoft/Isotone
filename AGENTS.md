@@ -210,8 +210,6 @@ Always develop straight on `main` (never create feature branches or secondary gi
 
 Credentials never enter tracked files, arguments, logs, or handoff prose. The code-signing certificate and its password are supplied to the packaging scripts from outside the repository.
 
-## Codex campaign writer (owner, 2026-11-14)
+## Writer and reviewer roles (owner, 2026-11-14)
 
-Codex is also an authorised writer, one session at a time under the existing campaign guard. This supersedes earlier statements restricting writers to Claude or Antigravity. Follow `docs/codex-campaign.md` and `.codex/skills/process-plan/SKILL.md`; the repository's canonical workflow skills are shared procedure documents that Codex may read. Independent review uses `--writer codex` and the Carbon route, never Codex reviewing itself. Existing plan, quality and review requirements are unchanged.
-
-Codex's `carbon` reviewer is Orchestrator (Carbon), model `gemini-pro-orchestrator`, through `agy`. The `agy` and `claude` routes remain on Astra. The shared schedule scopes effort to the Codex reviewer CLI: medium for plan, first returned round and completion; low for follow-up rounds and reconciliation. Orchestrator receives no effort override. Failed attempts do not advance the round effort. Lenses, pass limits and blocking severities are unchanged; see `docs/codex-campaign.md`.
+Only Claude Code and Antigravity may run writer campaigns, one at a time. Codex is exclusively the independent headless reviewer on GPT-6 Astra. This supersedes the earlier Codex writer and Antigravity reviewer experiment. Both writer routes use Astra with no fallback. Plan, first round and completion use medium effort; follow-up rounds and reconciliation use low. Failed attempts do not advance effort. Review lenses, the 33-pass cap and P1/P2 blocking policy remain unchanged. Desktop shortcuts launch only Carbon or Claude; `-Runner codex` is refused. See `docs/codex-campaign.md` for the retired launcher and current review policy.
