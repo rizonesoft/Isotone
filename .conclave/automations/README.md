@@ -30,13 +30,15 @@ The workflow needs the repository setting "Allow GitHub Actions to create and ap
 - **A pin moved:** a GitHub pull request labelled `dependencies` and `pins`, from the pins workflow or Dependabot. GitHub notifies you as for any PR. Merge it when its checks are green.
 - **Something needs your decision:** a GitHub issue labelled `pins` and `pins:<check>`. It closes itself once the finding is gone, and closing it yourself dismisses that finding.
 - **Something on this PC is behind:** an email from "Isotone automations" (`website@rizonetech.com`, through SMTP2GO) to `rizonetech@gmail.com`, titled "Isotone: ... is available", sent once per new finding.
-- **A check broke:** on GitHub, a failed `pins` run, which GitHub emails to whoever last edited the schedule; on this PC, an email titled "Automation failed: <task> on <host>" with the log tail and how to run it again, repeated on every failing run until fixed.
+- **A check broke:** on GitHub, a failed `pins` run, which GitHub emails to whoever last edited the schedule; on this PC, an email titled "Automation failed: <task> on <host>" with the log tail and how to run it again, sent once per failure: while the same failure repeats it is resent only as a reminder every 24 hours, a different failure is sent at once, and the next passing run clears it.
 
 No PR, issue or email means everything is current. `gh pr list --label pins`, `gh issue list --label pins` and the `Get-ScheduledTask` line below show the state at any time.
 
 ## When a run fails
 
 Task Scheduler starts `pythonw.exe .conclave/automations/run.py <name>`. The runner writes the run's output to `build/automations/<name>/<UTC>.log` (the newest 20 kept) and its outcome to `build/automations/<name>/last.json`. On a non-zero exit or a timeout it calls `alert.py`, which emails `rizonetech@gmail.com` the task, its exit, the tail of that run's log, and how to run it again.
+
+- One failure, one email: `build/automations/<name>/alerted.json` records the last email's fingerprint (the exit and the log with timestamps and elapsed counters taken out) and when it went. A run failing the same way within 24 hours of it sends nothing and says so at the end of its log (exit unchanged); a different failure, or the same one 24 hours on, is emailed. A passing run deletes the record, and so does deleting the file by hand. An alert that could not be sent records nothing, so the next run tries again.
 
 - It sends through SMTP2GO from `website@rizonetech.com`, the verified Rizonetech sender (Rizonesoft is a brand of Rizonetech), as "Isotone automations".
 - The key is read at send time from the Conclave vault item "Rizonetech SMTP2GO (website mail)" through `conclave-op` in WSL. Nothing is stored here, and there is no `.env`.

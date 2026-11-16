@@ -8,7 +8,9 @@ Windows Task Scheduler starts this through `pythonw.exe` (install.ps1 registers 
 and on Linux and WSL a systemd user timer starts it (install.sh). It runs the task's command from the repository
 root with the task's timeout, writes the combined output to `build/automations/<name>/<UTC>.log` (the newest 20
 kept) and the outcome to `build/automations/<name>/last.json`, and on a non-zero exit, a timeout, or a command that
-cannot start (126) sends the failure email through alert.py. Every process it starts, and every nested launch in
+cannot start (126) sends the failure email through alert.py. The same failure (same exit and log, timestamps and
+elapsed counters aside) is emailed once and then only as a reminder every REMIND_HOURS, recorded in
+`build/automations/<name>/alerted.json`, which the next passing run deletes. Every process it starts, and every nested launch in
 the tasks, carries CREATE_NO_WINDOW on Windows, so a scheduled run never opens a console on the desktop. This
 wrapper is the one place a failure is reported on both schedulers. Its own exit is the command's (124 on a timeout,
 or 3 when the alert could not be sent), so Task Scheduler's Last Run Result and a failed systemd unit show it too.
@@ -17,6 +19,7 @@ or 3 when the alert could not be sent), so Task Scheduler's Last Run Result and 
 from __future__ import annotations
 
 import datetime
+import hashlib
 import importlib.util
 import json
 import os
@@ -32,6 +35,11 @@ DAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun
 KEEP_LOGS = 20
 NO_WINDOW = 0x08000000
 MARKER = "# conclave-automations: "
+# The same failure is emailed once, then again only as a reminder this many hours after the last email.
+REMIND_HOURS = 24
+# What changes between two runs of one failure: timestamps and elapsed-time counters ("unread 75 minutes on").
+VOLATILE = re.compile(r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?|\d{8}T\d{6}Z"
+                      r"|\b\d+(\.\d+)? ?(ms|s|seconds?|minutes?|hours?|days?)\b")
 
 
 class TaskError(ValueError):
@@ -254,17 +262,56 @@ def main(argv: list[str], root: str = REPO, popen=subprocess.Popen, alerter=None
         print(f"run: no task named {argv[0]} in tasks.json", file=sys.stderr)
         return 2
     outcome = execute(argv[0], task, root, popen, killer)
+    alerted_path = os.path.join(root, "build", "automations", argv[0], "alerted.json")
     if outcome["exit"] == 0:
+        if os.path.exists(alerted_path):  # recovered: the next failure is news again
+            os.unlink(alerted_path)
         return 0
+    log_path = os.path.join(root, outcome["log"])
+    mark = fingerprint(outcome, log_path)
+    previous = _read_alerted(alerted_path)
+    now = datetime.datetime.now(datetime.timezone.utc)
+    if previous and previous["fingerprint"] == mark and now - previous["sent"] < datetime.timedelta(hours=REMIND_HOURS):
+        remind = (previous["sent"] + datetime.timedelta(hours=REMIND_HOURS)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        with open(log_path, "a", encoding="utf-8") as fh:
+            fh.write(f"\nrun.py: alert not repeated: the same failure was emailed at "
+                     f"{previous['sent'].strftime('%Y-%m-%dT%H:%M:%SZ')}; a reminder goes after {remind}\n")
+        return outcome["exit"]
     alert = _alert_module()
     try:
-        (alerter or alert.send_failure)(argv[0], task, outcome, alert.tail_of(os.path.join(root, outcome["log"])),
-                                        manifest["folder"])
+        (alerter or alert.send_failure)(argv[0], task, outcome, alert.tail_of(log_path), manifest["folder"])
     except Exception as error:  # the run already failed; an unsent alert must still show, as exit 3
-        with open(os.path.join(root, outcome["log"]), "a", encoding="utf-8") as fh:
+        with open(log_path, "a", encoding="utf-8") as fh:
             fh.write(f"\nrun.py: alert not sent: {type(error).__name__}: {error}\n")
         return 3
+    tmp = alerted_path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        json.dump({"fingerprint": mark, "sent": now.strftime("%Y-%m-%dT%H:%M:%SZ")}, fh, indent=2)
+    os.replace(tmp, alerted_path)
     return outcome["exit"]
+
+
+def fingerprint(outcome: dict, log_path: str) -> str:
+    """What makes two failures the same one: the exit, a timeout, and the log with its timestamps and counters
+    taken out. A different message, exit, pull request or run URL is a new failure and is emailed at once."""
+    try:
+        with open(log_path, encoding="utf-8", errors="replace") as fh:
+            text = fh.read()
+    except OSError:
+        text = ""
+    stable = VOLATILE.sub("#", text)
+    return hashlib.sha256(f"{outcome.get('exit')}|{outcome.get('timed_out')}|{stable}".encode()).hexdigest()
+
+
+def _read_alerted(path: str) -> dict | None:
+    """The last email's fingerprint and UTC send time, or None when absent or unreadable (which emails again)."""
+    try:
+        with open(path, encoding="utf-8") as fh:
+            doc = json.load(fh)
+        sent = datetime.datetime.strptime(doc["sent"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
+        return {"fingerprint": str(doc["fingerprint"]), "sent": sent}
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
 
 
 if __name__ == "__main__":

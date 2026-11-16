@@ -253,6 +253,59 @@ class Runner(unittest.TestCase):
             time.sleep(0.05)
         self.assertFalse(alive(child_pid), "the task's child survived the timeout kill")
 
+    def test_the_same_failure_is_emailed_once_until_it_clears_or_a_day_passes(self):
+        # 2026-11-16: an hourly task failing on one unchanged cause emailed on every run.
+        self.assertEqual(self.main("demo-fail"), 3)
+        self.assertEqual(self.main("demo-fail"), 3)
+        self.assertEqual(len(self.alerts), 1)
+        log = (self.root / self.last("demo-fail")["log"]).read_text(encoding="utf-8")
+        self.assertIn("alert not repeated", log)
+        record = self.root / "build" / "automations" / "demo-fail" / "alerted.json"
+        doc = json.loads(record.read_text(encoding="utf-8"))
+        doc["sent"] = "2000-01-01T00:00:00Z"  # the last email is older than the reminder interval
+        record.write_text(json.dumps(doc), encoding="utf-8")
+        self.main("demo-fail")
+        self.assertEqual(len(self.alerts), 2)
+
+    def test_a_changed_failure_is_emailed_at_once_and_timestamps_do_not_change_it(self):
+        fail = "import sys, datetime; print(datetime.datetime.now().isoformat(), '{}'); print('unread', {}, 'minutes on'); sys.exit(1)"
+        self.tasks["tasks"][1]["command"][-1] = fail.format("red", 1)
+        self.write()
+        self.main("demo-fail")
+        self.tasks["tasks"][1]["command"][-1] = fail.format("red", 75)
+        self.write()
+        self.main("demo-fail")
+        self.assertEqual(len(self.alerts), 1, "a new timestamp or minute count is the same failure")
+        self.tasks["tasks"][1]["command"][-1] = fail.format("another cause", 75)
+        self.write()
+        self.main("demo-fail")
+        self.assertEqual(len(self.alerts), 2)
+
+    def test_a_pass_clears_the_record_so_the_next_failure_is_emailed(self):
+        self.main("demo-fail")
+        self.tasks["tasks"][1]["command"][-1] = "print('fixed')"
+        self.write()
+        self.assertEqual(self.main("demo-fail"), 0)
+        self.assertFalse((self.root / "build" / "automations" / "demo-fail" / "alerted.json").exists())
+        self.tasks["tasks"][1]["command"][-1] = "import sys; print('it broke'); sys.exit(3)"
+        self.write()
+        self.main("demo-fail")
+        self.assertEqual(len(self.alerts), 2)
+
+    def test_an_unsent_alert_is_retried_on_the_next_run(self):
+        def refuse(*_a):
+            raise alert.Refused("vault field credential is unavailable")
+
+        self.assertEqual(self.main("demo-fail", alerter=refuse), 3)
+        self.main("demo-fail")
+        self.assertEqual(len(self.alerts), 1)
+
+    def test_the_windows_logon_trigger_fires_once_and_only_the_time_trigger_repeats(self):
+        # 2026-11-16: both triggers carried the interval, so after a logon the task ran twice an hour.
+        text = (AUTO / "install.ps1").read_text(encoding="utf-8")
+        self.assertNotIn("$logon.Repetition", text)
+        self.assertIn("-RepetitionInterval $every", text)
+
     def test_an_unknown_task_or_bad_arguments_are_refused(self):
         self.assertEqual(self.main("demo-missing"), 2)
         self.assertEqual(self.main(), 2)
