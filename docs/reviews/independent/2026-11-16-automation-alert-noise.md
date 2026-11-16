@@ -46,3 +46,55 @@ OVERALL: needs-attention
 2. Fixed within the installer tests' existing static style (the scheduler cmdlets cannot run hermetically in CI): the test now reads the `$t = @(...)` trigger list and requires the logon trigger in it, exactly one `-RepetitionInterval $every`, on the `-Once` time trigger, and no `.Repetition` assignment anywhere. The live registration was checked on this PC after reinstalling: `MSFT_TaskLogonTrigger` with no repetition and a 15-minute delay, `MSFT_TaskTimeTrigger` repeating `PT1H`.
 3. Fixed. The README row now says once 15 minutes after each logon, and every 60 minutes counted from when the installer last ran.
 4. Fixed. `alert.py`'s docstring describes the once-per-failure policy and the 24-hour reminder, and says the CLI always sends for the last run.
+
+## Round 2: astra (`gpt-6-astra` via `codex`)
+
+- Writer: claude
+- Run: 2026-11-16T08:34:26Z
+- Candidate: ba4fc87efc248b5b6dbea922e6b083ba16db9f5c
+- Effort: low
+- Lenses: adversarial, consistency, integration, quality, optimization, source-defect, docs-drift
+- Lines: 37
+- Digest: 8d5c7e32a3e97233
+
+### adversarial: needs-attention
+
+1. **P2, `.conclave/automations/run.py:277`: The lock does not prevent overlapping runs from contaminating each other’s fingerprint.** `execute()` runs before locking, and log filenames have only second precision (`:158`). Reproduce by starting the documented manual runner alongside its scheduled instance within the same second, while an identical failure is already recorded. If both executions finish before reporting, the first report appends its suppression note to their shared log. The second hashes that note as new failure content and emails again. An in-memory reproduction using two serialized `_report()` calls against that shared log produced one additional email. Give each execution a unique log and protect shared execution records, or serialize execution too.
+
+### consistency: approve
+
+No findings.
+
+### integration: approve
+
+No additional findings.
+
+### quality: approve
+
+No additional findings.
+
+### optimization: approve
+
+No findings.
+
+### source-defect: approve
+
+No findings.
+
+### docs-drift: approve
+
+No findings.
+
+LENS adversarial: findings
+LENS consistency: clean
+LENS integration: clean
+LENS quality: clean
+LENS optimization: clean
+LENS source-defect: clean
+LENS docs-drift: clean
+HIGHEST: P2
+OVERALL: needs-attention
+
+## Response to round 2
+
+1. Fixed at its cause: two runs never share a log. `execute()` now creates its log exclusively through `_fresh_log` (`<UTC>.log`, then `<UTC>-2.log` and on within the same second), so one run's suppression note can never enter another run's fingerprint, and their outputs no longer interleave either. Test: `test_two_runs_in_one_second_write_separate_logs`.

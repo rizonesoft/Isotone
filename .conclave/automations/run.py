@@ -151,15 +151,28 @@ def _kill_tree(proc) -> None:
     proc.wait(timeout=60)
 
 
+def _fresh_log(folder: str):
+    """A log no other run writes: `<UTC>.log`, or `<UTC>-2.log` and on when a run started in the same second
+    already holds that name (created exclusively, so two runs never share one log or one fingerprint)."""
+    stamp = _utc(stamp=True)
+    for n in range(1, 1000):
+        path = os.path.join(folder, stamp + (f"-{n}" if n > 1 else "") + ".log")
+        try:
+            return path, open(path, "xb")
+        except FileExistsError:
+            continue
+    raise FileExistsError(f"no free log name for {stamp} in {folder}")
+
+
 def execute(name: str, task: dict, root: str, popen=subprocess.Popen, killer=_kill_tree) -> dict:
     """Run the task's command into a fresh log; returns the outcome recorded in last.json."""
     folder = os.path.join(root, "build", "automations", name)
     os.makedirs(folder, exist_ok=True)
-    log = os.path.join(folder, _utc(stamp=True) + ".log")
+    log, out = _fresh_log(folder)
     outcome = {"name": name, "started": _utc(), "log": os.path.relpath(log, root).replace("\\", "/"),
                "timed_out": False}
     env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
-    with open(log, "wb") as out:
+    with out:
         try:
             proc = popen(resolve(task["command"]), cwd=root, stdout=out, stderr=subprocess.STDOUT,
                          stdin=subprocess.DEVNULL, env=env, **_spawn_options())

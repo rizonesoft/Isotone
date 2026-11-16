@@ -321,6 +321,16 @@ class Runner(unittest.TestCase):
         second.join(10)
         self.assertEqual(len(self.alerts), 1)
 
+    def test_two_runs_in_one_second_write_separate_logs(self):
+        # Review round 2: a shared log let one run's suppression note change the other's fingerprint.
+        from unittest import mock
+        with mock.patch.object(run, "_utc", lambda stamp=False: "20261116T080222Z" if stamp else "2026-11-16T08:02:22Z"):
+            self.main("demo-fail")
+            self.main("demo-fail")
+        logs = sorted(p.name for p in (self.root / "build" / "automations" / "demo-fail").glob("*.log"))
+        self.assertEqual(logs, ["20261116T080222Z-2.log", "20261116T080222Z.log"])
+        self.assertEqual(len(self.alerts), 1)
+
     def test_a_lock_held_too_long_is_an_unsent_alert(self):
         folder = self.root / "build" / "automations" / "demo-fail"
         folder.mkdir(parents=True)
