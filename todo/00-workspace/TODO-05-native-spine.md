@@ -2,7 +2,7 @@
 schema_version: 1
 id: native-spine
 domain: 00-workspace
-status: done
+status: active
 title: "TODO-05 -- The Native Spine: Toolchain, Build, Gates, and CI"
 depends_on: []
 track: W5
@@ -66,6 +66,7 @@ track: W5
 |   9   |   §9    | Fuzzing: the qualified toolchain, the corpus layout, and the nightly budget | §5, §8 |  [x]   |
 |  10   |   §10   | The proof standard for C++ | §7, §9 |  [x]   |
 |  11   |   §11   | The tidy gate builds only the sources it reads | §4 |  [x]   |
+|  12   |   §12   | Standard library hardening in every native target | §3, §5 |  [ ]   |
 
 ---
 
@@ -349,6 +350,27 @@ A Test checkpoint may cite only a gate that exists (AGENTS.md, What counts as pr
 
 > **Verified:** 2026-11-13 | §11 | f0f805b7e817baa963630337f858420475a34052
 > **Review:** `docs/reviews/d00-t05-s11.json`
+
+## 12. Standard Library Hardening in Every Native Target
+
+**Filed 2026-11-16** by the operator, from a memory-safety review of every C++ repository on the machine. `isotone_apply_flags` in `native/cmake/IsotoneTargets.cmake` gives every target `/W4 /WX`, `/guard:cf`, `/CETCOMPAT` on x64, and the `/analyze` and AddressSanitizer lanes of `D00 T05 §4` and `D00 T05 §5`, and nothing that checks a standard library access in a shipped build: a Release target reads past the end of a `std::vector` or a `std::span` without complaint (`git grep -n -i STL_HARDENING -- native docs scripts` prints nothing). Measured that day with this machine's compiler (MSVC 19.52, `/std:c++latest /O2`, with `/MD` and with `/MT`), on probes outside this repository: the same out-of-bounds read of a `std::vector` and of a `std::span` returned garbage and exited 0 in a plain build, and ended the process with exit `0xC0000409` (fast-fail) under `/D_MSVC_STL_HARDENING=1`. A Debug build already checks through `_ITERATOR_DEBUG_LEVEL=2`; this section is about what ships. A fast-fail reaches no handler inside the process, which is the case the crash watcher of `D01 T26 §1` is planned for, so this section adds no handler of its own. It does not reach object lifetime: a dangling reference stays the sanitizer lane's and the fuzzers' job.
+
+**Fidelity:** no surface of its own (non-feature infrastructure: a compiler definition and its proof, with no competitor-facing feature, so no `**Exceed:**` paragraph).
+**Needs:** Windows host (build/test)
+
+- -> XREF: D00 T05 §3 -- the target helpers every native target goes through, where the definition is added
+- -> XREF: D00 T05 §5 -- the sanitizer probe whose shape (an error committed on purpose, a pass only on the expected outcome) the hardening probe follows
+- -> XREF: D01 T26 §1 -- the crash watcher that turns the fast-fail this section introduces into a report the user can read
+
+- [ ] Add `_MSVC_STL_HARDENING=1` to `isotone_apply_flags` in `native/cmake/IsotoneTargets.cmake` with `target_compile_definitions(... PRIVATE ...)`, in every configuration, and to `isotone_apply_fuzz_flags`' library variants through the copied `COMPILE_DEFINITIONS`. Done when: `compile_commands.json` of `x64-release` shows the definition on every first-party source and on no vcpkg source. Cheaper substitute that fails the checkpoint: `add_compile_definitions` at the root of `native/CMakeLists.txt`, which bypasses the helper every target is required to go through (`isotone_require_registered_targets`).
+- [ ] Add `isotone_add_hardening_probe` beside `isotone_add_sanitizer_probe` in `native/cmake/IsotoneTargets.cmake` and `native/tests/hardening/hardening_probe_test.cpp`, an executable that reads a `std::span<int>` six elements past its end, registered with CTest under the label `hardening-probe` through a `cmake -P` runner that passes only on exit `0xC0000409`. Done when: `ctest --preset x64-release -L hardening-probe` passes, and fails when the definition is removed from `isotone_apply_flags`, then it is restored, both quoted. Cheaper substitute that fails the checkpoint: `WILL_FAIL`, which also passes when the probe fails to start.
+- [ ] Build every preset (`x64-debug`, `x64-release`, the ARM64 pair, the sanitizer and fuzz presets) and fix each new diagnostic at the line it names. Done when: `pwsh scripts/check-all.ps1` exits 0 with every native stage PASS, quoted with its gate count.
+- [ ] Check `scripts/native-artifact-gate.py` against the hardened objects: if the definition adds a `/FAILIFMISMATCH` directive, add it to the fixtures under `scripts/tests/fixtures/native-artifact-gate/` and to the gate's expected set. Done when: `python scripts/native-artifact-gate.py --self-test` reports 0 failed and the gate reports 0 findings on a hardened `x64-release` tree, and the item states whether a directive appeared.
+- [ ] Measure the cost on the reference benchmarks of `D00 T04 §2` with and without the definition and record both in `docs/dev/decisions.md` under `## 2026-11-16: Standard library hardening in shipped builds`, with the measured trap, the compiler version and what the definition does not cover. Done when: the entry quotes both benchmark records and no budget in `todo/budget.json` is exceeded; an exceeded budget is reported to the operator, never raised.
+- [ ] Add the probe to the `native` job of `.github/workflows/build.yml` and to `docs/dev/build.md`. Done when: the run for the commit is green with the probe in its log, read back with `ci-wait`, and the document names the label.
+- [ ] Commit: `"workspace: standard library hardening in every native target, proved by a probe"`
+
+**Test checkpoint:** Unit test and driven run: `ctest --preset x64-release -L hardening-probe` passes with the probe's exit `0xC0000409` quoted, the same command fails with the definition removed from `isotone_apply_flags` (quoted, then restored), and `pwsh scripts/check-all.ps1` exits 0.
 
 ## Verification
 

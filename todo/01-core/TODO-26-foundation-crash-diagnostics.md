@@ -22,6 +22,7 @@ track: F13
 - [`docs/specs/2026-10-22-native-stack-design.md`](../../docs/specs/2026-10-22-native-stack-design.md), "Crash diagnostics" -- the watcher (`DebugActiveProcess` with `DebugSetProcessKillOnExit(FALSE)`), the debug events acted on, `MiniDumpWriteDump` encrypted through its I/O callbacks, the dump folder and its five-dump limit, the attach breakpoint continued, the developer switch, the Help menu send, the Windows Error Reporting exclusion, symbol archiving, and the proofs
 - -> XREF: D01 T19 §3 -- the encryption every dump is written through
 - -> XREF: D00 T07 §3 -- authored this file; every entry section waits on its stamp
+- -> XREF: D00 T05 §12 -- the standard library hardening whose fast-fail (exit `0xC0000409`) is one of the fail-fast kinds §1's watcher must catch
 - -> XREF: D00 T07 §5 -- the native release pipeline re-plan, which archives the PDBs by build id and re-runs §4 against each app's own installers
 
 ## Outcome
