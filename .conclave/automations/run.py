@@ -18,6 +18,7 @@ or 3 when the alert could not be sent), so Task Scheduler's Last Run Result and 
 
 from __future__ import annotations
 
+import contextlib
 import datetime
 import hashlib
 import importlib.util
@@ -27,6 +28,12 @@ import re
 import signal
 import subprocess
 import sys
+import time
+
+if os.name == "nt":
+    import msvcrt
+else:
+    import fcntl
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.normpath(os.path.join(HERE, "..", ".."))
@@ -37,6 +44,8 @@ NO_WINDOW = 0x08000000
 MARKER = "# conclave-automations: "
 # The same failure is emailed once, then again only as a reminder this many hours after the last email.
 REMIND_HOURS = 24
+# How long a run waits for another run of the same task to finish its alert (vault read and send are each bounded).
+LOCK_WAIT_SECONDS = 300
 # What changes between two runs of one failure: timestamps and elapsed-time counters ("unread 75 minutes on").
 VOLATILE = re.compile(r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?|\d{8}T\d{6}Z"
                       r"|\b\d+(\.\d+)? ?(ms|s|seconds?|minutes?|hours?|days?)\b")
@@ -262,7 +271,45 @@ def main(argv: list[str], root: str = REPO, popen=subprocess.Popen, alerter=None
         print(f"run: no task named {argv[0]} in tasks.json", file=sys.stderr)
         return 2
     outcome = execute(argv[0], task, root, popen, killer)
-    alerted_path = os.path.join(root, "build", "automations", argv[0], "alerted.json")
+    # A run started by hand beside the scheduled one (IgnoreNew covers only the scheduler) reads and writes the
+    # same alerted.json, so the check, the send and the record happen under one per-task lock.
+    try:
+        with _task_lock(os.path.join(root, "build", "automations", argv[0], "alert.lock")):
+            return _report(argv[0], task, outcome, root, manifest["folder"], alerter)
+    except TimeoutError as error:  # the other run never let go: this run's outcome must still show, as exit 3
+        with open(os.path.join(root, outcome["log"]), "a", encoding="utf-8") as fh:
+            fh.write(f"\nrun.py: alert not sent: {error}\n")
+        return 3
+
+
+@contextlib.contextmanager
+def _task_lock(path: str, wait_seconds: int | None = None):
+    """An exclusive lock on path, released when the block ends or the process dies (an OS file lock, never a
+    marker file a crash could leave behind)."""
+    wait_seconds = LOCK_WAIT_SECONDS if wait_seconds is None else wait_seconds
+    fh = open(path, "a+b")
+    deadline = time.monotonic() + wait_seconds
+    try:
+        while True:
+            try:
+                if os.name == "nt":
+                    fh.seek(0)
+                    msvcrt.locking(fh.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except OSError:
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(f"{path} stayed locked for {wait_seconds} seconds")
+                time.sleep(0.2)
+        yield
+    finally:
+        fh.close()  # closing the handle releases the lock on both systems
+
+
+def _report(name: str, task: dict, outcome: dict, root: str, folder: str, alerter) -> int:
+    """Clear the record on a pass; on a failure, email it unless the same failure was emailed within REMIND_HOURS."""
+    alerted_path = os.path.join(root, "build", "automations", name, "alerted.json")
     if outcome["exit"] == 0:
         if os.path.exists(alerted_path):  # recovered: the next failure is news again
             os.unlink(alerted_path)
@@ -279,7 +326,7 @@ def main(argv: list[str], root: str = REPO, popen=subprocess.Popen, alerter=None
         return outcome["exit"]
     alert = _alert_module()
     try:
-        (alerter or alert.send_failure)(argv[0], task, outcome, alert.tail_of(log_path), manifest["folder"])
+        (alerter or alert.send_failure)(name, task, outcome, alert.tail_of(log_path), folder)
     except Exception as error:  # the run already failed; an unsent alert must still show, as exit 3
         with open(log_path, "a", encoding="utf-8") as fh:
             fh.write(f"\nrun.py: alert not sent: {type(error).__name__}: {error}\n")

@@ -3,8 +3,11 @@
     python .conclave/automations/alert.py NAME            send the failure email for NAME's last run
     python .conclave/automations/alert.py NAME --dry-run  print that email instead, reading no key
 
-run.py calls `send_failure` when a task exits non-zero or times out, so a failed run is reported by the
-wrapper that saw it fail, whatever the command printed. The email carries the task, its exit, its start and
+run.py calls `send_failure` when a task exits non-zero or times out and that failure is news: a failure is
+emailed once, and while the same failure repeats it is emailed again only as a reminder every 24 hours
+(`REMIND_HOURS` in run.py, recorded in `build/automations/<name>/alerted.json`). So a failed run is reported by
+the wrapper that saw it fail, whatever the command printed. Running this file by hand always sends (or, with
+--dry-run, prints) the email for the task's last run, whatever run.py last sent. The email carries the task, its exit, its start and
 finish, the tail of that run's log, and how to run it again on this machine's scheduler.
 
 It goes through SMTP2GO's `/v3/email/send` from the Rizonetech website sender, the verified sender and key every

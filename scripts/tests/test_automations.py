@@ -300,11 +300,48 @@ class Runner(unittest.TestCase):
         self.main("demo-fail")
         self.assertEqual(len(self.alerts), 1)
 
+    def test_overlapping_runs_of_one_failure_send_one_email(self):
+        # A run started by hand beside the scheduled one: the second waits on the lock, then sees the record.
+        import threading
+        entered, release = threading.Event(), threading.Event()
+
+        def slow(*a):
+            entered.set()
+            release.wait(10)
+            self.alerts.append(a)
+
+        first = threading.Thread(target=self.main, args=("demo-fail",), kwargs={"alerter": slow})
+        first.start()
+        self.assertTrue(entered.wait(10))
+        second = threading.Thread(target=self.main, args=("demo-fail",))
+        second.start()
+        time.sleep(0.5)
+        release.set()
+        first.join(10)
+        second.join(10)
+        self.assertEqual(len(self.alerts), 1)
+
+    def test_a_lock_held_too_long_is_an_unsent_alert(self):
+        folder = self.root / "build" / "automations" / "demo-fail"
+        folder.mkdir(parents=True)
+        with run._task_lock(str(folder / "alert.lock")):
+            saved, run.LOCK_WAIT_SECONDS = run.LOCK_WAIT_SECONDS, 0
+            try:
+                self.assertEqual(self.main("demo-fail"), 3)
+            finally:
+                run.LOCK_WAIT_SECONDS = saved
+        self.assertEqual(self.alerts, [])
+        self.assertIn("alert not sent", (self.root / self.last("demo-fail")["log"]).read_text(encoding="utf-8"))
+
     def test_the_windows_logon_trigger_fires_once_and_only_the_time_trigger_repeats(self):
-        # 2026-11-16: both triggers carried the interval, so after a logon the task ran twice an hour.
+        # 2026-11-16: both triggers carried the interval, so after a logon the task ran twice an hour. The trigger
+        # list must hold both triggers, and the interval must sit only on the time trigger.
         text = (AUTO / "install.ps1").read_text(encoding="utf-8")
-        self.assertNotIn("$logon.Repetition", text)
-        self.assertIn("-RepetitionInterval $every", text)
+        self.assertNotIn(".Repetition", text)
+        triggers = re.search(r"^\s*\$t = @\((.+)\)\s*$", text, re.M).group(1)
+        self.assertTrue(triggers.startswith("$logon, "), triggers)
+        self.assertEqual(triggers.count("-RepetitionInterval $every"), 1)
+        self.assertIn("New-ScheduledTaskTrigger -Once", triggers)
 
     def test_an_unknown_task_or_bad_arguments_are_refused(self):
         self.assertEqual(self.main("demo-missing"), 2)
