@@ -310,15 +310,25 @@ class Runner(unittest.TestCase):
             release.wait(10)
             self.alerts.append(a)
 
-        first = threading.Thread(target=self.main, args=("demo-fail",), kwargs={"alerter": slow})
+        results = {}
+
+        def call(key, **kw):
+            try:
+                results[key] = self.main("demo-fail", **kw)
+            except BaseException as error:  # a crashed runner must fail the test, not vanish with its thread
+                results[key] = error
+
+        first = threading.Thread(target=call, args=("first",), kwargs={"alerter": slow})
         first.start()
         self.assertTrue(entered.wait(10))
-        second = threading.Thread(target=self.main, args=("demo-fail",))
+        second = threading.Thread(target=call, args=("second",))
         second.start()
         time.sleep(0.5)
         release.set()
         first.join(10)
         second.join(10)
+        self.assertFalse(first.is_alive() or second.is_alive(), "a runner did not finish")
+        self.assertEqual(results, {"first": 3, "second": 3})
         self.assertEqual(len(self.alerts), 1)
 
     def test_two_runs_in_one_second_write_separate_logs(self):
