@@ -5,7 +5,7 @@ description: Runner that takes one phase of todo/implementation-plan.md to 100% 
 
 # Process Phase
 
-One phase of `todo/implementation-plan.md`, driven straight on `main` to 100% completion, or parked when every remaining row is blocked or runnable-elsewhere (`docs/todo-workflow.md`). Never stop mid-phase on questions you can resolve from the source, specifications, measurements, or driven runs (`AGENTS.md`); obey an explicit operator stop/pause immediately by ending the run guard first.
+One phase of `todo/implementation-plan.md`, driven straight on `main` to 100% completion, or parked when every remaining row is blocked or runnable-elsewhere (`docs/todo-workflow.md`). Never stop mid-phase on questions you can resolve from the source, specifications, measurements, or driven runs (`AGENTS.md`); obey an explicit operator stop/pause immediately by ending the run guard first. Under Orchestrator (Carbon), Carbon plans one ready section per `exit_plan_mode` handoff, and Hydrogen hands back to Carbon after each row's `stamp`, push, `merge_prs.py`, and `ci_status.py` check before resolving the next row (whether `Surface` is `yes` or `no`), or immediately mid-section on a missing design token or `Chrome:` control, `COMPLETION: gaps` or a `P1` or `P2` architectural or design-contract finding, or two failed attempts on the same fix.
 
 **Three valid endings only:** all rows `[x]` with a written closeout (`## Closeout run=<run id>`), every leftover row blocked/runnable-elsewhere with a written park record (`PARKED <UTC> run=<run id> <reason>` at column 0), or an explicit operator pause. Never bypass a gate (`--no-verify`, `--amend`, force-push, feature branches, and secondary worktrees are forbidden).
 

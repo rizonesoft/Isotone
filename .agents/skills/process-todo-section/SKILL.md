@@ -5,7 +5,7 @@ description: Process exactly one TODO section end to end -- resolve it, validate
 
 # Process TODO Section
 
-One section, built cleanly on `main` (`docs/todo-workflow.md`). Never improvise around a drifted plan and never build a section you found to be wrong: validate the contract against the live repository, correct drifted claims in the TODO file visibly, pass the pre-build `plan` review, implement every item to 100% completion, run the section's gates, commit, and hand to `review-todo-section`.
+One section, built cleanly on `main` (`docs/todo-workflow.md`). Never improvise around a drifted plan and never build a section you found to be wrong: validate the contract against the live repository, correct drifted claims in the TODO file visibly, pass the pre-build `plan` review, implement every item to 100% completion, run the section's gates, commit, and hand to `review-todo-section`. Under Orchestrator (Carbon), Carbon performs the pre-build validation against the live repository and `docs/design/SPEC.md` in Plan Mode (naming exact design tokens, shared `Chrome:` controls, UI states, and verification commands) before calling `exit_plan_mode` for that single section, and sets `Re-plan if:` so Hydrogen hands back after `stamp` and `ci_status.py` before the next row or immediately on missing tokens/controls, `COMPLETION: gaps` or a `P1` or `P2` architectural/design-contract finding, or two failed fix attempts.
 
 ## Step 0 -- resolve the argument before anything else
 

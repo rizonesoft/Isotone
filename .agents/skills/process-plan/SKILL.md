@@ -5,7 +5,7 @@ description: Front door for todo/implementation-plan.md. Audits the plan, starts
 
 # Process the Implementation Plan
 
-The campaign front door for `todo/implementation-plan.md` (`docs/todo-workflow.md`). Writes stay serial on `main`, and the session running this skill is the single writer on the repository (`AGENTS.md`). In Antigravity (`agy`), substitute this session's `Conversation ID` (from `<user_information>`) wherever `$CLAUDE_CODE_SESSION_ID` appears below, use `schedule` (`CronExpression: "3-59/5 * * * *"`, `IsDaemon: true`) for `CronCreate`, and use `manage_task` (`list` and `kill`) for `CronList` and `CronDelete`.
+The campaign front door for `todo/implementation-plan.md` (`docs/todo-workflow.md`). Writes stay serial on `main`, and the session running this skill is the single writer on the repository (`AGENTS.md`). In Antigravity (`agy`), substitute this session's `Conversation ID` (from `<user_information>`) wherever `$CLAUDE_CODE_SESSION_ID` appears below, use `schedule` (`CronExpression: "3-59/5 * * * *"`, `IsDaemon: true`) for `CronCreate`, and use `manage_task` (`list` and `kill`) for `CronList` and `CronDelete`. Under Orchestrator (Carbon), Carbon plans one ready TODO section per `exit_plan_mode` turn, and Hydrogen hands back to Carbon after each section's `stamp`, push, `merge_prs.py`, and `ci_status.py` check before resolving the next ready row (whether `Surface` is `yes` or `no`).
 
 ## 0. Route
 
