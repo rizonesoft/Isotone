@@ -139,7 +139,7 @@ HEADING_FAMILY = {"GPT": "codex", "Opus": "claude", "Claude": "claude", "Grok": 
 # release it matches (never a suffixed variant: `grok-4.7`, not
 # `grok-4.7-build-fast`), and `served` what the provider reported running.
 RECORD_MODELS = {
-    "gpt-6-astra": {"family": "codex"},
+    "gpt-6.2-astra": {"family": "codex"},
     "gpt-6.1-sol": {"family": "codex"},
     "gpt-6-sol": {"family": "codex"},
     "gpt-5.6-terra": {"family": "codex"},
@@ -1189,8 +1189,8 @@ run: D00-T01-S1
 date: 2026-09-17
 runner: codex
 rounds: 2
-round: 1 model: gpt-6-astra effort: high outcome: findings candidate: 6bb635e provider: openai version: gpt-6-astra cost: unresolved latency: unresolved opportunity: full-scope purpose: section-review provenance: reconstructed findings: D00-T01-S1-F1, D00-T01-S1-F2
-round: 2 model: gpt-6-astra effort: high outcome: empty candidate: 8437dd5 provider: openai version: gpt-6-astra cost: unresolved latency: unresolved opportunity: delta-plus-regressions purpose: fix-loop provenance: reconstructed findings:
+round: 1 model: gpt-6.2-astra effort: high outcome: findings candidate: 6bb635e provider: openai version: gpt-6.2-astra cost: unresolved latency: unresolved opportunity: full-scope purpose: section-review provenance: reconstructed findings: D00-T01-S1-F1, D00-T01-S1-F2
+round: 2 model: gpt-6.2-astra effort: high outcome: empty candidate: 8437dd5 provider: openai version: gpt-6.2-astra cost: unresolved latency: unresolved opportunity: delta-plus-regressions purpose: fix-loop provenance: reconstructed findings:
 empty: 1
 refuted: 0
 """
@@ -1198,7 +1198,7 @@ refuted: 0
     check("parse-clean", not errors and len(runs) == 1, f"{errors}")
     # Records are history: every GPT model the committed records name is in RECORD_MODELS itself, never only in the
     # live pin, so re-pinning the reviewer cannot make its earlier rounds fail (2026-11-10: the re-pin from GPT-6.1
-    # Sol to GPT-6 Astra did exactly that).
+    # Sol to GPT-6.2 Astra did exactly that).
     try:
         with open(Path(__file__).resolve().parent.parent / "docs" / "reviews" / "run-records.md",
                   encoding="utf-8") as fh:

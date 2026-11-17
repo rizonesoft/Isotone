@@ -1088,7 +1088,7 @@ def _self_test() -> int:
         disp_file = mdir / "D00-T01-s99.md"
         disp_file.write_text(
             "# Review findings: D00 T01 §99\n\n"
-            "## Round 1: astra (`gpt-6-astra` via `codex`)\n"
+            "## Round 1: astra (`gpt-6.2-astra` via `codex`)\n"
             "- Candidate: `0123456789abcdef0123456789abcdef01234567`\n"
             "- Lines: 3\n"
             "- Digest: `deadbeef`\n"

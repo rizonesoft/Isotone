@@ -10,7 +10,7 @@ on top and guards the writer's subagents across both Antigravity (`.agents/hooks
 - Antigravity (`agy`) on Orchestrator (Carbon) (`gemini-pro-orchestrator`) is the repository's writer (operator
   decision 2026-11-10, taking over from Claude Code on Opus 5.5).
 - Every route in `[routes]` names a single cross-family reviewer with no fallback (operator decisions 2026-09-25,
-  2026-10-21, and 2026-11-10): GPT-6 Astra (`astra`) reviews whichever of `agy`, `claude`, or `muse` wrote the work; a
+  2026-10-21, and 2026-11-10): GPT-6.2 Astra (`astra`) reviews whichever of `agy`, `claude`, or `muse` wrote the work; a
   round Astra cannot return is retried with backoff and then parks only its section (operator decision 2026-10-23), and
   the writer's family never reviews.
 - Subagents read and run; they never write (operator decision 2026-10-02). In Antigravity, `.agents/hooks.json` wires
@@ -7018,7 +7018,7 @@ def _self_test() -> int:
             ("powershell variable indirect claude", "run_command", {"CommandLine": "$bin = 'claude'; & $bin -p inspect"}, "Variable-indirect"),
             ("python inline subprocess claude", "run_command", {"CommandLine": "python -c \"import subprocess; subprocess.run(['claude', '-p', 'x'])\""}, "Inline script subprocesses"),
             ("encoded powershell command", "run_command", {"CommandLine": "pwsh -EncodedCommand ZWNobyBoZWxsbw=="}, "Encoded PowerShell"),
-            ("direct codex bypassing dispatcher", "run_command", {"CommandLine": "codex exec -m gpt-6-astra 'review'"}, "review-dispatch.py"),
+            ("direct codex bypassing dispatcher", "run_command", {"CommandLine": "codex exec -m gpt-6.2-astra 'review'"}, "review-dispatch.py"),
             ("agy plugin install mutation", "run_command", {"CommandLine": "agy plugin install foo"}, "bypass delegation"),
             ("git worktree add secondary worktree", "run_command", {"CommandLine": "git worktree add ../wt main"}, "git worktree add"),
             ("git worktree move secondary worktree", "run_command", {"CommandLine": "git worktree move ../wt ../wt2"}, "git worktree add"),

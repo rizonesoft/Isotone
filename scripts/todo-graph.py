@@ -8234,7 +8234,7 @@ track: Z1
         check("provenance: count then family, no model", (prov[1]["family"], prov[1]["model"], prov[1]["runs"]), ("grok", None, 7))
         check("provenance: model not recorded", (prov[2]["family"], prov[2]["model"], prov[2]["status"]), (None, None, "passed"))
         check("provenance: claude opus", (prov[3]["family"], prov[3]["model"]), ("claude", "opus"))
-        final = _review_entries("`adversarial` approve (codex gpt-6-astra ×1) · `adversarial-final` advisory (qwen qwen3.8-max ×1) · `fidelity` advisory (skipped)")
+        final = _review_entries("`adversarial` approve (codex gpt-6.2-astra ×1) · `adversarial-final` advisory (qwen qwen3.8-max ×1) · `fidelity` advisory (skipped)")
         check("advisory pass: family, model, status", (final[1]["kind"], final[1]["family"], final[1]["model"], final[1]["status"], final[1]["label"]), ("adversarial-final", "qwen", "qwen3.8-max", "advisory", "Qwen final"))
         check("advisory skipped: status skipped, no family", (final[2]["kind"], final[2]["family"], final[2]["status"]), ("fidelity", None, "skipped"))
         bare = _review_entries("`adversarial` approve · `record` needs-attention (1)")

@@ -3525,7 +3525,7 @@ def _self_test() -> int:
         root = _workspace(tmpd)
         os.makedirs(os.path.join(root, ".conclave"))
         with open(os.path.join(root, ".conclave", "reviewers.toml"), "w", encoding="utf-8") as fh:
-            fh.write('schema_version = 1\n[reviewers.astra]\ncli = "codex"\nmodel = "gpt-6-astra"\neffort = "medium"\n'
+            fh.write('schema_version = 1\n[reviewers.astra]\ncli = "codex"\nmodel = "gpt-6.2-astra"\neffort = "medium"\n'
                      '[routes]\nagy = ["astra"]\n')
         check("writer-model-reads-schema-1-pin", writer_model(root) == "gemini-pro-orchestrator", writer_model(root))
         with open(os.path.join(root, ".conclave", "reviewers.toml"), "w", encoding="utf-8") as fh:

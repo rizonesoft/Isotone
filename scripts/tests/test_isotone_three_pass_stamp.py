@@ -525,8 +525,8 @@ class IsotoneThreePassEndToEndTests(unittest.TestCase):
             "date: 2026-10-19\n"
             "runner: panel\n"
             "rounds: 1\n"
-            f"round: 1 model: gpt-6-astra effort: medium outcome: findings candidate: {legacy_cand} "
-            "provider: openai version: gpt-6-astra cost: 1000tokens latency: 10s opportunity: full-scope "
+            f"round: 1 model: gpt-6.2-astra effort: medium outcome: findings candidate: {legacy_cand} "
+            "provider: openai version: gpt-6.2-astra cost: 1000tokens latency: 10s opportunity: full-scope "
             "purpose: section-review provenance: recorded findings: D00-T01-S1-F1\n"
             "empty: 0\n"
             "refuted: 1\n",

@@ -657,7 +657,7 @@ class SectionContract(ThreePass):
         for effort in ("medium", "high", "low"):
             schedule = schedule.replace(f'effort = "{effort}"', f'effort_by_cli = {{ codex = "{effort}" }}')
         final_pin = prefix + "[schedule]" + schedule
-        initial_pin = final_pin.replace('cli = "codex"\nmodel = "gpt-6-astra"\neffort = "medium"',
+        initial_pin = final_pin.replace('cli = "codex"\nmodel = "gpt-6.2-astra"\neffort = "medium"',
                                         'cli = "agy"\nmodel = "gemini-pro-orchestrator"')
         self.base = self.commit("initial rotation", {".conclave/reviewers.toml": initial_pin})
         self.record = self.repo / "docs/reviews/independent/rotation.md"

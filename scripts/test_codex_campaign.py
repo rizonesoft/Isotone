@@ -24,7 +24,7 @@ class WriterRoles(unittest.TestCase):
         self.assertEqual(pin["routes"], {"agy": ["astra"], "claude": ["astra"]})
         self.assertEqual(set(pin["reviewers"]), {"astra"})
         self.assertEqual(pin["reviewers"]["astra"]["cli"], "codex")
-        self.assertEqual(pin["reviewers"]["astra"]["model"], "gpt-6-astra")
+        self.assertEqual(pin["reviewers"]["astra"]["model"], "gpt-6.2-astra")
         schedule = pin["schedule"]
         self.assertEqual(schedule["rounds"][0]["effort_by_cli"], {"codex": "medium"})
         self.assertEqual(schedule["rounds"][0]["followup_effort_by_cli"], {"codex": "low"})

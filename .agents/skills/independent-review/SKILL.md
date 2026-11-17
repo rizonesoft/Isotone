@@ -1,15 +1,15 @@
 ---
 name: independent-review
-description: Get an independent review of your own work outside a TODO section from the reviewer pinned in .conclave/reviewers.toml (GPT-6 Astra, never the writer's family, no fallback) through scripts/review-prompt.py and scripts/review-dispatch.py, then verify and act on every finding. Use before calling a nontrivial workspace change done or before shipping it; TODO sections review through review-todo-section instead.
+description: Get an independent review of your own work outside a TODO section from the reviewer pinned in .conclave/reviewers.toml (GPT-6.2 Astra, never the writer's family, no fallback) through scripts/review-prompt.py and scripts/review-dispatch.py, then verify and act on every finding. Use before calling a nontrivial workspace change done or before shipping it; TODO sections review through review-todo-section instead.
 ---
 
 # Independent Review
 
-Your own review is not enough for a nontrivial change: a cross-family model reviews it. `.conclave/reviewers.toml` names who reviews the writer's work (`astra` on `gpt-6-astra` via `codex` for `agy`), and `scripts/review-dispatch.py` runs every round read-only.
+Your own review is not enough for a nontrivial change: a cross-family model reviews it. `.conclave/reviewers.toml` names who reviews the writer's work (`astra` on `gpt-6.2-astra` via `codex` for `agy`), and `scripts/review-dispatch.py` runs every round read-only.
 
 | Work written by | Reviewer | Fallback |
 | --- | --- | --- |
-| Antigravity (`agy`) on Gemini 4 Carbon (Medium) | GPT-6 Astra (`astra`), scheduled effort from `.conclave/reviewers.toml` | none: a round Astra cannot return is retried with backoff and then parked |
+| Antigravity (`agy`) on Gemini 4 Carbon (Medium) | GPT-6.2 Astra (`astra`), scheduled effort from `.conclave/reviewers.toml` | none: a round Astra cannot return is retried with backoff and then parked |
 
 The dispatcher refuses a reviewer of the writer's own family, and `python scripts/panel_slots.py validate` plus `python scripts/review_pin.py --check` enforce the pin (`docs/dev/decisions.md`). A TODO section never uses this skill: its `plan`, `round`, `completion`, and `reconciliation` passes run through `process-todo-section` and `review-todo-section`.
 

@@ -7,7 +7,7 @@ description: Quality-gate and stamp an implemented TODO section under the three-
 
 The gate between "code exists" and `[x]` (`docs/todo-workflow.md`). Nothing flips an Implementation Order row by hand: `python scripts/todo-graph.py stamp` verifies the cross-family `three-pass` review chain in `docs/reviews/<NN-domain>/D<NN>-T<NN>-s<N>.md`, writes the canonical JSON receipt `docs/reviews/<slug>.json`, writes `> **Verified:**` + `> **Review:**`, and syncs `todo/implementation-plan.md`.
 
-Every review pass runs through `scripts/review-dispatch.py` (`--writer claude` in Claude Code, `--writer agy` in Antigravity) against `.conclave/reviewers.toml` (`astra` on `gpt-6-astra` via `codex`, `[schedule] policy = "three-pass"`, `pass_cap = 33`, `blocking = ["P1", "P2"]`, no fallback). The writer's model family never reviews its own work.
+Every review pass runs through `scripts/review-dispatch.py` (`--writer claude` in Claude Code, `--writer agy` in Antigravity) against `.conclave/reviewers.toml` (`astra` on `gpt-6.2-astra` via `codex`, `[schedule] policy = "three-pass"`, `pass_cap = 33`, `blocking = ["P1", "P2"]`, no fallback). The writer's model family never reviews its own work.
 
 ## Step 0 -- resolve the argument
 

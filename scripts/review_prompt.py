@@ -5184,7 +5184,7 @@ def _self_test() -> int:
                   "--head", r3, "--tree", rtree, "--runner-output", arunner,
                   "--findings", "find.md",
                   "--verdict", "approve", "--runner-stderr", serr,
-                  "--model", "gpt-6-astra",
+                  "--model", "gpt-6.2-astra",
                   "--run-clock", "2026-09-21T03:00:00Z")
         check("attest-v2-stderr-mismatch",
               got.returncode == 1 and "disagrees with the runner output" in got.stderr

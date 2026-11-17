@@ -2,7 +2,7 @@
 #
 # Operator decision 2026-11-10: Antigravity (`agy`) on Orchestrator (Carbon) (`gemini-pro-orchestrator`, pinned in
 # `scripts/panel_slots.py`) takes over from Claude Code as the writer in this repository. Operator decision 2026-11-10:
-# the reviewer is GPT-6 Astra always, whichever of Antigravity (`agy`) or Claude Code (`claude`) wrote the work, so
+# the reviewer is GPT-6.2 Astra always, whichever of Antigravity (`agy`) or Claude Code (`claude`) wrote the work, so
 # each route names `astra` alone with no fallback (operator decisions 2026-09-25, 2026-10-21, and 2026-10-23).
 # Operator decision 2026-11-12: adopt Conclave-SDK's `three-pass` review schedule (`plan` -> one `round` ->
 # `completion`, plus `reconciliation` only when completion returns blocking gaps).
@@ -13,11 +13,11 @@
 
 schema_version = 1
 
-# GPT-6 Astra through the Codex CLI, read-only sandbox (operator decision 2026-11-10: "The reviewer should be GPT6
+# GPT-6.2 Astra through the Codex CLI, read-only sandbox (operator decision 2026-11-10: "The reviewer should be GPT6
 # Astra."). Astra starts at medium effort; follow-up rounds use low effort (operator decision 2026-11-14).
 [reviewers.astra]
 cli = "codex"
-model = "gpt-6-astra"
+model = "gpt-6.2-astra"
 effort = "medium"
 
 [routes]
