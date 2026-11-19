@@ -1584,13 +1584,10 @@ def writer_model(root: str, runner: str = "agy") -> str:
 
 
 def writer_effort(runner: str) -> list[str]:
-    """The `--effort` flags the runner's writer pin carries (`panel_slots.WRITERS`); Antigravity's model name
-    carries its own effort, so it takes none."""
-    if runner != "claude":
-        return []
+    """The `--effort` flags the runner's writer pin carries (`panel_slots.WRITERS`)."""
     sys.path.insert(0, HERE)
     import panel_slots
-    effort = panel_slots.WRITERS["claude"].get("effort")
+    effort = panel_slots.WRITERS.get(runner, {}).get("effort")
     return ["--effort", str(effort)] if effort else []
 
 
@@ -3527,11 +3524,11 @@ def _self_test() -> int:
         with open(os.path.join(root, ".conclave", "reviewers.toml"), "w", encoding="utf-8") as fh:
             fh.write('schema_version = 1\n[reviewers.astra]\ncli = "codex"\nmodel = "gpt-6.2-astra"\neffort = "medium"\n'
                      '[routes]\nagy = ["astra"]\n')
-        check("writer-model-reads-schema-1-pin", writer_model(root) == "gemini-pro-orchestrator", writer_model(root))
+        check("writer-model-reads-schema-1-pin", writer_model(root) == "gemini-4-neon-medium", writer_model(root))
         with open(os.path.join(root, ".conclave", "reviewers.toml"), "w", encoding="utf-8") as fh:
             fh.write('[writer]\nagent = "agy"\nmodel = "gemini-test-1"\n')
         world = FakeWorld(root)
-        flags = ["--dangerously-skip-permissions", "--model", "gemini-test-1"]
+        flags = ["--dangerously-skip-permissions", "--model", "gemini-test-1", "--effort", "medium"]
         check("goal-fits-the-limit", len(GOAL) <= 4000, str(len(GOAL)))
 
         # The sign-in token: read from the vault, refused unless it has the token's shape, and never a reason to stop.
@@ -3619,8 +3616,9 @@ def _self_test() -> int:
         code, said = start(root, world)
         argv = world.runs[0]
         sid = world.minted[0]
-        check("start-runs-a-new-session-under-the-goal", code == 0 and argv[:3] == flags
-              and argv[3] == "-i" and argv[4] == "/goal " + GOAL and len(world.runs) == 1, str(argv[:5]))
+        check("start-runs-a-new-session-under-the-goal", code == 0 and argv[:len(flags)] == flags
+              and argv[len(flags)] == "-i" and argv[len(flags) + 1] == "/goal " + GOAL and len(world.runs) == 1,
+              str(argv[:len(flags) + 2]))
         check("the-slot-is-held-while-the-session-runs", seen["held"] is True)
         check("a-second-start-is-refused-while-one-runs", seen["second-start"] == 3)
         check("the-slot-is-free-when-the-session-ends", not slot_held(root))
@@ -3793,9 +3791,9 @@ def _self_test() -> int:
         check("start-hands-over-claude-guard-to-fresh-agy-conversation",
               code == 0 and len(world.runs) == 1
               and "--conversation" not in world.runs[0]
-              and "claude-old-session" not in world.runs[0][:4]
-              and world.runs[0][:4] == [*flags, "-i"]
-              and "Isotone runner handover:" in world.runs[0][4]
+              and "claude-old-session" not in world.runs[0][:len(flags) + 1]
+              and world.runs[0][:len(flags) + 1] == [*flags, "-i"]
+              and "Isotone runner handover:" in world.runs[0][len(flags) + 1]
               and migrated_cid and migrated_cid != "claude-old-session"
               and migrated_guard.get("runner") == "agy"
               and migrated_guard.get("session_id") == migrated_cid
@@ -3820,7 +3818,8 @@ def _self_test() -> int:
         # sign-in, resumed by the operator in Claude Code, and a hand-over from an Antigravity guard.
         cflags = ["--dangerously-skip-permissions", "--model", "opus", "--effort", "medium"]
         check("writer-model-for-claude-is-latest-opus-at-medium", writer_model(root, "claude") == "opus"
-              and writer_effort("claude") == ["--effort", "medium"] and writer_effort("agy") == [])
+              and writer_effort("claude") == ["--effort", "medium"]
+              and writer_effort("agy") == ["--effort", "medium"])
         check("claude-goal-names-claude-tools-and-the-claude-route",
               "$CLAUDE_CODE_SESSION_ID" in CLAUDE_GOAL and "CronCreate" in CLAUDE_GOAL
               and "--writer claude" in CLAUDE_GOAL and "AskUserQuestion" in CLAUDE_GOAL

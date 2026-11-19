@@ -1,7 +1,8 @@
 # Independent reviewers for this repository, read by scripts/review_pin.py and scripts/review-dispatch.py.
 #
-# Operator decision 2026-11-10: Antigravity (`agy`) on Orchestrator (Carbon) (`gemini-pro-orchestrator`, pinned in
-# `scripts/panel_slots.py`) takes over from Claude Code as the writer in this repository. Operator decision 2026-11-10:
+# Operator decision 2026-11-10 (updated 2026-11-19): Antigravity (`agy`) on Gemini 4 Neon at medium effort
+# (`gemini-4-neon-medium`, pinned in `scripts/panel_slots.py`) takes over from Claude Code as the writer in this
+# repository. Operator decision 2026-11-10:
 # the reviewer is GPT-6.2 Astra always, whichever of Antigravity (`agy`) or Claude Code (`claude`) wrote the work, so
 # each route names `astra` alone with no fallback (operator decisions 2026-09-25, 2026-10-21, and 2026-10-23).
 # Operator decision 2026-11-12: adopt Conclave-SDK's `three-pass` review schedule (`plan` -> one `round` ->

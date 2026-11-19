@@ -10,7 +10,7 @@
   - No run is open: a new session starts under `/goal`, with the goal text campaign_guard.py holds for that runner
     (finish the plan through process-plan, every section stamped, acting autonomously, self-improving, self-healing,
     and building products that beat every competitor), with --dangerously-skip-permissions, on the runner's writer
-    model from `scripts/panel_slots.py` (`WRITERS`: `gemini-pro-orchestrator` for agy, `opus` at `--effort medium` for claude).
+    model from `scripts/panel_slots.py` (`WRITERS`: `gemini-4-neon-medium` at `--effort medium` for agy, `opus` at `--effort medium` for claude).
     Claude Code signs in with the one-year `claude setup-token` token from the Conclave vault.
   - A run is open in this runner and its session died: that same session is resumed, so it still owns the run guard.
   - A run is open in the other runner: it is handed over to a fresh session in this runner, keeping its run file,
@@ -35,7 +35,7 @@
 #>
 [CmdletBinding()]
 param(
-  # The campaign runner: Antigravity on Orchestrator (Carbon) (`agy`) or Claude Code (`claude`).
+  # The campaign runner: Antigravity on Gemini 4 Neon at medium effort (`agy`) or Claude Code (`claude`).
   [ValidateSet('agy', 'claude')]
   [string]$Runner = 'agy',
   # Creates or replaces both desktop shortcuts for this clone ("Isotone Carbon campaign" and "Isotone Claude
@@ -95,7 +95,7 @@ os.replace(target + ".tmp", target)
   New-Item -ItemType Directory -Force $icons | Out-Null
   $shortcuts = @(
     @{ Runner = 'agy'; Name = 'Isotone Carbon campaign'; Icon = 'isotone-campaign-carbon.ico'; Fill = '#4C8DF6'; Mark = 'gemini'
-       Description = 'Start or resume the unattended Isotone campaign in Google Antigravity on Orchestrator (Carbon)' },
+       Description = 'Start or resume the unattended Isotone campaign in Google Antigravity on Gemini 4 Neon (medium effort)' },
     @{ Runner = 'claude'; Name = 'Isotone Claude campaign'; Icon = 'isotone-campaign-claude.ico'; Fill = '#D97757'; Mark = 'claude'
        Description = 'Start or resume the unattended Isotone campaign in Claude Code' }
   )

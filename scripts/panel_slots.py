@@ -7,8 +7,8 @@ resolve; updated 2026-11-10 to the `D:\\Recto\\.conclave\\reviewers.toml` shape)
 on top and guards the writer's subagents across both Antigravity (`.agents/hooks.json`) and Claude Code
 (`.claude/settings.json` and `.claude/agents/*.md`):
 
-- Antigravity (`agy`) on Orchestrator (Carbon) (`gemini-pro-orchestrator`) is the repository's writer (operator
-  decision 2026-11-10, taking over from Claude Code on Opus 5.5).
+- Antigravity (`agy`) on Gemini 4 Neon at medium effort (`gemini-4-neon-medium`) is the repository's writer (operator
+  decision 2026-11-10, taking over from Claude Code on Opus 5.5; repinned from Orchestrator (Carbon) on 2026-11-19).
 - Every route in `[routes]` names a single cross-family reviewer with no fallback (operator decisions 2026-09-25,
   2026-10-21, and 2026-11-10): GPT-6.2 Astra (`astra`) reviews whichever of `agy`, `claude`, or `muse` wrote the work; a
   round Astra cannot return is retried with backoff and then parks only its section (operator decision 2026-10-23), and
@@ -57,10 +57,10 @@ from typing import NamedTuple
 # plus a `delegate-probe` run (and `standards/delegation.md` re-verified).
 DELEGATE_ALIASES = ("sonnet",)
 DELEGATE_EFFORTS = ("high",)
-# The writer (operator decision 2026-11-10: Antigravity takes over from Claude Code as writer, on Orchestrator (Carbon))
-# and the Claude Code delegate pin served at the last `delegate-probe` (2026-10-01). `routes` key `agy` in the reviewer
-# pin is this writer.
-WRITER = {"agent": "agy", "model": "gemini-pro-orchestrator", "family": "google"}
+# The writer (operator decision 2026-11-10: Antigravity takes over from Claude Code as writer; repinned 2026-11-19 to
+# Gemini 4 Neon at medium effort) and the Claude Code delegate pin served at the last `delegate-probe` (2026-10-01).
+# `routes` key `agy` in the reviewer pin is this writer.
+WRITER = {"agent": "agy", "model": "gemini-4-neon-medium", "effort": "medium", "family": "google"}
 # The second campaign runner (operator decision 2026-11-12: "create one to start in Claude Code"): either runner may
 # write a run, one at a time under the session slot (scripts/campaign_guard.py). `routes` key `claude` reviews it.
 # `opus` is Claude Code's alias for the latest Opus, so the runner moves with each release (operator request 2026-11-12:
@@ -7278,8 +7278,9 @@ def _self_test() -> int:
         agy_sub_created("sub-orch-plan"),
         agy_sub_created("sub-orch-exec"),
     ])
+    orch_table = dict(agy_table, writer=dict(agy_table["writer"], model="gemini-pro-orchestrator"))
     buf = io.StringIO()
-    rc = delegate_audit("parent-orch-clean", None, buf, agy_table, audit_agents, agy_root=agy_home, env={})
+    rc = delegate_audit("parent-orch-clean", None, buf, orch_table, audit_agents, agy_root=agy_home, env={})
     text = buf.getvalue()
     check("agy orchestrator audit accepts Carbon planning and Hydrogen worker inherit turns",
           rc == 0
@@ -7310,7 +7311,7 @@ def _self_test() -> int:
         agy_sub_created("sub-orch-bad-display"),
     ])
     buf = io.StringIO()
-    rc = delegate_audit("parent-orch-bad", None, buf, agy_table, audit_agents, agy_root=agy_home, env={})
+    rc = delegate_audit("parent-orch-bad", None, buf, orch_table, audit_agents, agy_root=agy_home, env={})
     text = buf.getvalue()
     check("agy orchestrator audit rejects flash_lite, non-orchestrator carbon-low, and spoofed effortless display names",
           rc == 1
@@ -7355,7 +7356,7 @@ def _self_test() -> int:
         check("checked-in pin validates", False, str(exc))
     for argv_case, expected in ((["validate"], "delegate sonnet -> "), (["delegate"], "sonnet "),
                                 (["delegate", "effort"], "high"), (["show"], "agent isotone-"),
-                                (["writer"], "gemini-pro-orchestrator google"),
+                                (["writer"], "gemini-4-neon-medium google"),
                                 (["writer", "agent"], "agy")):
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):

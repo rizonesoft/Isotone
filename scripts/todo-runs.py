@@ -149,6 +149,7 @@ RECORD_MODELS = {
     "claude-sonnet-5-5": {"family": "claude"},
     "opus": {"family": "claude"},
     "gemini-4-carbon-medium": {"family": "agy"},
+    "gemini-4-neon-medium": {"family": "agy"},
     "gemini-pro-orchestrator": {"family": "agy"},
     "grok-newest": {"family": "grok", "newest": r"grok-(\d+)\.(\d+)", "served": r"grok-(\d+)\.(\d+)-build"},
 }
