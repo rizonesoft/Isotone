@@ -27,7 +27,7 @@
   Before starting, this script removes the scheduled task "Isotone run watchdog" if an older version of it left one on
   this machine.
 
-  The desktop shortcuts "Isotone Carbon campaign" (agy) and "Isotone Claude campaign" (claude) run this file. Stop the
+  The desktop shortcuts "Isotone Gemini campaign" (agy) and "Isotone Claude campaign" (claude) run this file. Stop the
   run by telling the session to stop: it ends the run through `campaign_guard.py end`, after which this script starts
   a new run instead of resuming that one.
 .EXAMPLE
@@ -38,7 +38,7 @@ param(
   # The campaign runner: Antigravity on Gemini 4 Neon at medium effort (`agy`) or Claude Code (`claude`).
   [ValidateSet('agy', 'claude')]
   [string]$Runner = 'agy',
-  # Creates or replaces both desktop shortcuts for this clone ("Isotone Carbon campaign" and "Isotone Claude
+  # Creates or replaces both desktop shortcuts for this clone ("Isotone Gemini campaign" and "Isotone Claude
   # campaign"), then exits. A shortcut can only hold absolute paths, so every one is derived here from where this file
   # and this PowerShell actually are: run it again after moving the clone.
   [switch]$InstallShortcut
@@ -94,7 +94,7 @@ os.replace(target + ".tmp", target)
   $icons = Join-Path $env:LOCALAPPDATA 'Isotone'
   New-Item -ItemType Directory -Force $icons | Out-Null
   $shortcuts = @(
-    @{ Runner = 'agy'; Name = 'Isotone Carbon campaign'; Icon = 'isotone-campaign-carbon.ico'; Fill = '#4C8DF6'; Mark = 'gemini'
+    @{ Runner = 'agy'; Name = 'Isotone Gemini campaign'; Icon = 'isotone-campaign-carbon.ico'; Fill = '#4C8DF6'; Mark = 'gemini'
        Description = 'Start or resume the unattended Isotone campaign in Google Antigravity on Gemini 4 Neon (medium effort)' },
     @{ Runner = 'claude'; Name = 'Isotone Claude campaign'; Icon = 'isotone-campaign-claude.ico'; Fill = '#D97757'; Mark = 'claude'
        Description = 'Start or resume the unattended Isotone campaign in Claude Code' }
