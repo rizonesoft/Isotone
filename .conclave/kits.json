@@ -136,6 +136,10 @@
       "kit": "reviewer",
       "sha256": "75fef4fa5c266241fdbacb3ca1b6886edd8cb310537c293d8c1dc57f72bf848b"
     },
+    "scripts/review_layout.py": {
+      "kit": "reviewer",
+      "sha256": "734f1105a0c59ab750d4eb046ea1418ac1cf7fab56be7f6ecc9ed19c4299b13d"
+    },
     "scripts/review_pin.py": {
       "kit": "reviewer",
       "sha256": "5d2f29bbdd20836e89d0d49dbfaee728b7397ec7915b63c173abeee0b02256d0"
@@ -176,7 +180,7 @@
         "claude"
       ],
       "host": null,
-      "sdk_commit": "90506cdc0da2f2408aeb997a7b014ea1eebda1a8"
+      "sdk_commit": "86b4bfeee6f2504ea56e4f1724129765ad7466ba"
     },
     "todo": {
       "agents": [

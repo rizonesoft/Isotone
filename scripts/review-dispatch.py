@@ -531,6 +531,10 @@ def review(pin, writer, prompt_path, timeout, plan=None, kind="round", keep=None
                    "replacing SHA, BASE and TIP with full commit hashes. Run each command alone, "
                    "without shell wrappers, pipes or redirects. These commands have session permission. "
                    "Do not run tests, edit files, delegate, or use external tools.\n")
+    # Every dispatched pass receives the single likelihood-weighted severity rubric once, outside the schedule gate,
+    # so the prompt always differs from the file and an Antigravity shim is always pointed at the copy.
+    prompt = prompt.rstrip("\n") + review_pin.SEVERITY_RUBRIC
+    appended = True
     scheduled_fields = {"effort": effort, "lenses": lenses} if plan else {}
 
     def none(reason):
