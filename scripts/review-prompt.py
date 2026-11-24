@@ -95,6 +95,9 @@ def resolve_todo(ref: str, resolved: tuple[dict, int] | None = None) -> str:
     return path
 
 
+SURFACE_LINE = re.compile(r"^(?:> )?\*\*Surface:\*\*", re.M)
+
+
 def section_field(body: str, name: str) -> str | None:
     """The one non-empty value of a `**Name:** value` line of a section (matching todo_graph.py: empty or duplicate
     occurrences return None)."""
@@ -314,6 +317,10 @@ def resolve_fidelity(ref: str, candidate: str | None = None, resolved: tuple[dic
     if body is None:
         body = graph_body
     surface = section_field(body, "Surface")
+    if not SURFACE_LINE.search(body) and isinstance(data.get("surface"), bool):
+        # Isotone's sections carry no Surface field: its graph reports the surface by the section's own Fidelity
+        # block (docs/dev/decisions.md, 2026-11-24), so an absent field takes that answer instead of a refusal.
+        surface = "yes" if data["surface"] else "no"
     if surface == "no":
         return None
     if surface != "yes":

@@ -4230,6 +4230,8 @@ def cmd_resolve(args: argparse.Namespace) -> int:
             "path": target.path, "ref": f"D{dom} T{target.number} §{sec}", "section": sec, "title": s.title,
             "status": s.status, "items_done": s.items_done, "items_total": s.items_total,
             "depends_on": list(s.depends_on), "unmet_depends": unmet,
+            # Isotone's surface rule: a **Fidelity:** block that is not an exemption ("no surface of its own").
+            "surface": s.has_fidelity_block and not s.fidelity_exempt,
             "body": lib_todo_graph_module().section_text(text, sec) or "", "skill_arg": skill_arg, "exit": code,
         }, indent=2, ensure_ascii=False))
     else:
@@ -13777,7 +13779,8 @@ def main() -> int:
     rs = sub.add_parser("resolve", help="turn any section reference into its file and number")
     rs.add_argument("ref", nargs="+", help="'D00 T01 §11', a pasted plan row, or '<path> §N'")
     rs.add_argument("--json", action="store_true",
-                    help="one JSON object (path, ref, status, unmet_depends, the section's body, exit) instead of the report")
+                    help="one JSON object (path, ref, status, unmet_depends, surface, the section's body, exit) "
+                         "instead of the report")
     rs.set_defaults(fn=cmd_resolve)
     cl = sub.add_parser(
         "classify",

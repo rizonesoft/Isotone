@@ -442,7 +442,12 @@ class FidelityLookup(Filler):
             "D00 T02 §3": "## 3. Ambiguous surface\\n\\n**Surface:** yes\\n**Surface:** no\\n",
             "D00 T02 §4": "## 4. Empty duplicate surface\\n\\n**Surface:**\\n**Surface:** no\\n",
             "D00 T02 §5": "## 5. Empty duplicate fidelity\\n\\n**Surface:** yes\\n**Fidelity:**\\n**Fidelity:** docs/x.md\\n",
+            "D00 T04 §1": "## 1. Isotone surface\\n\\n**Fidelity:** Stilus main window -- docs/design/stilus.md\\n",
+            "D00 T04 §2": "## 2. Isotone tooling\\n\\n**Fidelity:** no surface of its own (stdlib tooling).\\n",
+            "D00 T04 §3": "## 3. Field wins\\n\\n**Surface:** no\\n**Fidelity:** docs/design/stilus.md\\n",
         }
+        # Isotone's graph reports the surface by its own Fidelity rule for sections without a Surface field.
+        SURFACE = {"D00 T04 §1": True, "D00 T04 §2": False, "D00 T04 §3": True}
         ref = sys.argv[3] if sys.argv[1:3] == ["resolve", "--json"] and len(sys.argv) == 4 else None
         if ref == "D00 T03 §1":
             print(json.dumps({"ref": ref, "path": "todo/00-x/TODO-03-z.md", "exit": 0}))
@@ -450,7 +455,8 @@ class FidelityLookup(Filler):
         if ref not in BODIES:
             print("TODO refused: no such section: " + str(ref), file=sys.stderr)
             sys.exit(1)
-        print(json.dumps({"ref": ref, "path": "todo/00-x/TODO-01-y.md", "body": BODIES[ref], "exit": 3}))
+        extra = {"surface": SURFACE[ref]} if ref in SURFACE else {}
+        print(json.dumps({"ref": ref, "path": "todo/00-x/TODO-01-y.md", "body": BODIES[ref], "exit": 3, **extra}))
         sys.exit(3)
         ''')
 
@@ -507,6 +513,17 @@ class FidelityLookup(Filler):
         # Empty duplicate Fidelity on Surface: yes is also refused (Round 1 finding 4).
         message = self.refused("round", "--fidelity is needed", "--ref", "D00 T02 §5")
         self.assertIn("names no one Fidelity", message)
+
+    def test_without_a_surface_field_the_graphs_surface_answer_decides(self):
+        # Isotone's sections name no Surface field (0 of 890 on 2026-11-24): the graph's `surface` takes its place,
+        # while a section that has the field, or a graph that gives no answer, keeps the kit's rule.
+        for kind in KINDS:
+            with self.subTest(kind):
+                text = self.ok(kind, *self.extra(kind, "D00 T04 §1"))
+                self.assertIn("- Fidelity: `Stilus main window -- docs/design/stilus.md`.", text)
+                self.assertIn("- Fidelity: `none (Surface: no)`.", self.ok(kind, *self.extra(kind, "D00 T04 §2")))
+        self.assertIn("- Fidelity: `none (Surface: no)`.", self.ok("round", "--ref", "D00 T04 §3"))
+        self.assertIn("unambiguous Surface", self.refused("round", "--fidelity is needed", "--ref", "D00 T02 §2"))
 
     def test_candidate_commit_fidelity_wins_over_working_tree(self):
         import subprocess
