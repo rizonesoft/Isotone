@@ -385,7 +385,7 @@ class Refusals(Filler):
 class TodoLookup(Filler):
     graph = textwrap.dedent('''\
         import json, sys
-        if sys.argv[1:] == ["resolve", "D00 T01 §7"]:
+        if sys.argv[1:] == ["resolve", "--json", "D00 T01 §7"]:
             print(json.dumps({"ref": "D00 T01 §7", "path": "todo/00-x/TODO-01-y.md",
                               "body": "## 7. Example\\n\\n**Surface:** no\\n", "exit": 3}))
             sys.exit(3)
@@ -443,7 +443,7 @@ class FidelityLookup(Filler):
             "D00 T02 §4": "## 4. Empty duplicate surface\\n\\n**Surface:**\\n**Surface:** no\\n",
             "D00 T02 §5": "## 5. Empty duplicate fidelity\\n\\n**Surface:** yes\\n**Fidelity:**\\n**Fidelity:** docs/x.md\\n",
         }
-        ref = sys.argv[2] if sys.argv[1:2] == ["resolve"] and len(sys.argv) == 3 else None
+        ref = sys.argv[3] if sys.argv[1:3] == ["resolve", "--json"] and len(sys.argv) == 4 else None
         if ref == "D00 T03 §1":
             print(json.dumps({"ref": ref, "path": "todo/00-x/TODO-03-z.md", "exit": 0}))
             sys.exit(0)

@@ -77,7 +77,7 @@ def resolve_section(ref: str, option: str) -> tuple[dict, int]:
     if not GRAPH.is_file():
         raise Refused(f"{option} is needed: {GRAPH.name} is not beside this script to look up {ref}")
     try:
-        result = subprocess.run([sys.executable, "-B", str(GRAPH), "resolve", ref], capture_output=True, text=True,
+        result = subprocess.run([sys.executable, "-B", str(GRAPH), "resolve", "--json", ref], capture_output=True, text=True,
                                 timeout=60, encoding="utf-8", errors="replace")  # the graph prints UTF-8
         data = json.loads(result.stdout)
     except (OSError, subprocess.SubprocessError, ValueError) as error:

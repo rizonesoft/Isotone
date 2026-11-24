@@ -110,6 +110,7 @@ class IsotoneThreePassEndToEndTests(unittest.TestCase):
             "todo/README.md",
             "todo/budget.json",
             "scripts/check-all.ps1",
+            "scripts/review_layout.py",
             "scripts/review_pin.py",
             "scripts/review-prompt.py",
             "scripts/review-dispatch.py",

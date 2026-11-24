@@ -4174,66 +4174,69 @@ def cmd_resolve(args: argparse.Namespace) -> int:
     # dependency gate (D00 T01 §37): identical records to query/classify.
     unmet = [u["dnn"] for u in unmet_dependencies(target, sec, todos, by_key)]
 
-    print(f"path       {target.path}")
-    print(f"section    §{sec} -- {s.title}")
-    print(f"ref        D{dom} T{target.number} §{sec}")
-    print(f"status     [{s.status}]  ({s.items_done}/{s.items_total} items)")
-    print(f"frozen     {'yes -- section needs a Freeze check' if target.frozen else 'no'}")
-    print(f"deps       {', '.join(s.depends_on) if s.depends_on else '--'}")
+    report: list[str] = []  # printed below, unless --json asks for the machine form
+    report.append(f"path       {target.path}")
+    report.append(f"section    §{sec} -- {s.title}")
+    report.append(f"ref        D{dom} T{target.number} §{sec}")
+    report.append(f"status     [{s.status}]  ({s.items_done}/{s.items_total} items)")
+    report.append(f"frozen     {'yes -- section needs a Freeze check' if target.frozen else 'no'}")
+    report.append(f"deps       {', '.join(s.depends_on) if s.depends_on else '--'}")
     if s.moved:
-        print(f"moved      {s.moved}")
+        report.append(f"moved      {s.moved}")
     if s.lapsed:
-        print(f"lapsed     with its superseded file; superseded by {successor_path(target, todos)}")
+        report.append(f"lapsed     with its superseded file; superseded by {successor_path(target, todos)}")
     if s.needs_raw:
         keys = ', '.join(s.needs) if s.needs else 'UNKNOWN -- not in the closed list'
-        print(f"needs      {keys} ({s.needs_raw}); confirm the host or device is available before writing Started:")
+        report.append(f"needs      {keys} ({s.needs_raw}); confirm the host or device is available before writing Started:")
     if s.requires_has_line:
         if s.requires_unknown or not s.requires:
             bad = f"unknown value(s): {', '.join(s.requires_unknown)}" if s.requires_unknown else "no values"
-            print(f"requires   {s.requires_raw}; INVALID -- {bad} (see validate)")
+            report.append(f"requires   {s.requires_raw}; INVALID -- {bad} (see validate)")
         else:
             have = detect_context()
             missing = [v for v in s.requires if v not in have]
             verdict = "runnable here" if not missing else f"missing here: {', '.join(missing)}"
-            print(f"requires   {s.requires_raw}; {verdict}")
+            report.append(f"requires   {s.requires_raw}; {verdict}")
     if unmet:
-        print(f"UNMET      {', '.join(unmet)}")
-    print()
-    print(f"skill arg  {target.path.split('todo/', 1)[-1]} §{sec}")
+        report.append(f"UNMET      {', '.join(unmet)}")
+    report.append("")
+    skill_arg = f"{target.path.split('todo/', 1)[-1]} §{sec}"
+    report.append(f"skill arg  {skill_arg}")
 
-    if s.moved:
-        print(
-            f"\nNOTE: §{sec} is worked outside the tree: {moved_target(s.moved) or s.moved}. "
-            "Not a process-todo-section target; its row never flips here.",
-            file=sys.stderr,
-        )
-        return 5
-    if s.lapsed:
-        print(
-            f"\nNOTE: §{sec} lapsed with its file, which is superseded by {successor_path(target, todos)}. "
-            "It is never built: its acceptance requirements are with the successor the supersession map names.",
-            file=sys.stderr,
-        )
-        return 6
-    if s.status == "x":
-        print(
-            f"\nNOTE: §{sec} is already [x]. Re-checking shipped work is "
-            "review-todo-section in AUDIT stance, not process-todo-section.",
-            file=sys.stderr,
-        )
-        return 3
-    if unmet:
-        print(
-            f"\nNOTE: {len(unmet)} unmet dependency -- process-todo-section stops at "
-            "its dependency gate unless these are shipped first.",
-            file=sys.stderr,
-        )
-        return 4
     parked = parked_reason(target, s)
-    if parked:
-        print(f"\nNOTE: §{sec} is not runnable: {parked}.", file=sys.stderr)
-        return 4
-    return 0
+    if s.moved:
+        code, note = 5, (f"§{sec} is worked outside the tree: {moved_target(s.moved) or s.moved}. "
+                         "Not a process-todo-section target; its row never flips here.")
+    elif s.lapsed:
+        code, note = 6, (f"§{sec} lapsed with its file, which is superseded by {successor_path(target, todos)}. "
+                         "It is never built: its acceptance requirements are with the successor the supersession "
+                         "map names.")
+    elif s.status == "x":
+        code, note = 3, (f"§{sec} is already [x]. Re-checking shipped work is "
+                         "review-todo-section in AUDIT stance, not process-todo-section.")
+    elif unmet:
+        code, note = 4, (f"{len(unmet)} unmet dependency -- process-todo-section stops at "
+                         "its dependency gate unless these are shipped first.")
+    elif parked:
+        code, note = 4, f"§{sec} is not runnable: {parked}."
+    else:
+        code, note = 0, None
+
+    if getattr(args, "json", False):
+        # The machine form scripts/review-prompt.py reads: the same facts plus the section's own text, which its
+        # Surface and Fidelity lookup needs. The note stays on stderr, so stdout is exactly one JSON object.
+        text = (REPO / target.path).read_text(encoding="utf-8")
+        print(json.dumps({
+            "path": target.path, "ref": f"D{dom} T{target.number} §{sec}", "section": sec, "title": s.title,
+            "status": s.status, "items_done": s.items_done, "items_total": s.items_total,
+            "depends_on": list(s.depends_on), "unmet_depends": unmet,
+            "body": lib_todo_graph_module().section_text(text, sec) or "", "skill_arg": skill_arg, "exit": code,
+        }, indent=2, ensure_ascii=False))
+    else:
+        print("\n".join(report))
+    if note:
+        print(f"\nNOTE: {note}", file=sys.stderr)
+    return code
 
 
 # ------------------------------------------------------------------ plan
@@ -13773,6 +13776,8 @@ def main() -> int:
     sub.add_parser("render", help="mermaid dependency graph on stdout").set_defaults(fn=cmd_render)
     rs = sub.add_parser("resolve", help="turn any section reference into its file and number")
     rs.add_argument("ref", nargs="+", help="'D00 T01 §11', a pasted plan row, or '<path> §N'")
+    rs.add_argument("--json", action="store_true",
+                    help="one JSON object (path, ref, status, unmet_depends, the section's body, exit) instead of the report")
     rs.set_defaults(fn=cmd_resolve)
     cl = sub.add_parser(
         "classify",
