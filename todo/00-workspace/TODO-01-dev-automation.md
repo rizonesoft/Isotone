@@ -23,7 +23,7 @@ track: W1
 <!-- claim: count "^effort = \"medium\"$" .conclave/reviewers.toml = 1 -->
 <!-- claim: count "codex = \"medium\"" .conclave/reviewers.toml = 3 -->
 <!-- claim: count "codex = \"low\"" .conclave/reviewers.toml = 2 -->
-<!-- claim: count "^model = \"gpt-6-astra\"$" .conclave/reviewers.toml = 1 -->
+<!-- claim: count "^model = \"gpt-6.2-astra\"$" .conclave/reviewers.toml = 1 -->
 <!-- claim: count "default=1800" scripts/review-dispatch.py = 1 -->
 <!-- claim: count "^pass_cap = 33$" .conclave/reviewers.toml = 1 -->
 <!-- claim: count "^policy = \"three-pass\"$" .conclave/reviewers.toml = 1 -->
