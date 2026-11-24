@@ -213,3 +213,5 @@ Credentials never enter tracked files, arguments, logs, or handoff prose. The co
 ## Writer and reviewer roles (owner, 2026-11-14)
 
 Only Claude Code and Antigravity may run writer campaigns, one at a time. Codex is exclusively the independent headless reviewer on GPT-6.2 Astra. This supersedes the earlier Codex writer and Antigravity reviewer experiment. Both writer routes use Astra with no fallback. Plan, first round and completion use medium effort; follow-up rounds and reconciliation use low. Failed attempts do not advance effort. Review lenses, the 33-pass cap and P1/P2 blocking policy remain unchanged. Desktop shortcuts launch only Carbon or Claude; `-Runner codex` is refused. See `docs/codex-campaign.md` for the retired launcher and current review policy.
+
+- **Design contract rule:** always read `.agents/rules/design-contract.md` (mirrored at `.claude/rules/design-contract.md`) before UI edits, and run `python scripts/design-lint.py` before committing.
