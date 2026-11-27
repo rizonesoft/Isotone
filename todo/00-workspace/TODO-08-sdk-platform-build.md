@@ -30,6 +30,8 @@ track: W8
 - -> XREF: D00 T05 §12 -- standard library hardening, which the SDK build repeats for libc++
 - -> XREF: D01 T28 §1 -- moves `isotone::core` and the window onto the SDK, the first programs this file's checks hold
 - -> XREF: D01 T28 §3 -- the canvas program, the one that links the SDK's `gpu` part and so declares the GPU tier in its `app.json`
+- `impossible-os` `todo/11-apps/TODO-17-isotone.md` -- how Impossible OS imports and runs Isotone
+- `impossible-sdk` `tools/contribute.py` -- how this repository builds a missing SDK feature itself: `start` gives a worktree of the SDK main, `finish` pushes the reviewed change and moves this repository's `sdk.json` pin
 
 ## Outcome
 
