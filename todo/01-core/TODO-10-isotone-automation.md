@@ -304,6 +304,8 @@ IrfanView's switches, Photoshop's and GIMP's batch invocation, and ACDSee's cata
 
 **Fidelity:** no surface of its own (a command line has none; switches are proven by their outputs and exit codes).
 
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): this section was written for the managed stack and is re-planned native by `D00 T07`; wherever it names a Windows, DirectX, or system API (`CreateProcessW` and `IShellLinkW`), the re-planned section calls the operating system only through Impossible SDK (`D01 T28`, `D00 T08`), a GPU path keeps a CPU path, and an SDK feature it needs that the SDK lacks is built first in the Impossible SDK repository by Isotone's session, then `native/sdk.json` moves.
+
 - [ ] Add `src/Isotone.Core/CommandLine/CommandLineParser.cs` accepting `/switch`, `/switch=value`, `--switch value`, and `--switch=value`, case-insensitive switch names, quoted values, and positional file arguments with wildcards expanded. Done when: `CommandLineParserTests` assert each form and a wildcard fixture folder.
 - [ ] Add `/filelist=<file>` and `@<response file>` reading one path or argument per line. Done when: tests assert both.
 - [ ] Add `ISwitchProvider` and `SwitchRegistry` with typed switches (name, aliases, value kind, description, example) so each app registers its table and an unknown switch is refused by name with the nearest match. Done when: a test registers a fake table and asserts the refusal text for a misspelling.

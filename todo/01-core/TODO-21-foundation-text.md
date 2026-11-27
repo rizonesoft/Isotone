@@ -51,6 +51,8 @@ track: F8
 
 Each typing group is one undo step, and the host's audit log records the command that made it.
 
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): clusters, bidirectional runs, and font fallback come from the SDK's `text` part (the text engine, shaping, fallback, and right-to-left text of the Impossible SDK repository), not from `IDWriteTextAnalyzer` or DirectWrite: `TextModel` moves and deletes on the cluster boundaries the part reports and lays out with it, so every `TextModel.*` case keeps what it proves. A cluster or layout query the part lacks is built first in the SDK. This is a CPU screen.
+
 - [ ] Add `isotone::ui::TextModel` in `native/ui/src/text/`: caret movement and deletion by grapheme cluster (`IDWriteTextAnalyzer` cluster metrics), word and line movement, and selection by cluster. Done when: `TextModel.DeletesWholeCluster` passes for combining sequences, emoji with modifiers and zero-width joiners, and Hangul syllables.
 - [ ] Lay out with DirectWrite and system font fallback, mapping logical to visual positions so the caret and selection follow bidirectional text, with the caret's direction shown. Done when: `TextModel.BidiCaretFollowsVisualOrder` passes for mixed English and Arabic and for Hebrew with numbers.
 - [ ] Group typing into undo steps (a run of typing, broken by a caret move, a pause, or a different kind of edit), each a recorded command logged by the host. Done when: `TextModel.TypingGroupsIntoOneUndo` passes.
@@ -62,6 +64,8 @@ Each typing group is one undo step, and the host's audit log records the command
 
 **Fidelity:** no surface of its own (non-feature infrastructure: a foundation mechanism with no competitor-facing feature of its own, so no `**Exceed:**` paragraph; the product sections that use it carry theirs) -- the input method bridge.
 **Needs:** Windows host (build/test)
+
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): `ITextStoreACP2` and the TSF lock protocol are Windows COM and are not implemented here. Text input with an input method is an SDK section (window part, text input and composition topic in the Impossible SDK repository), and `isotone::ui::TextStore` becomes `isotone::ui::TextInput`, an adapter that gives the SDK's composition events (start, update, commit, cancel, and the composition's extent for the candidate window, at the window's DPI) the `TextModel`'s editing operations. The `TextStore.*` cases are renamed `TextInput.*` and keep their proofs, with the lock-protocol cases dropped because the SDK owns the lock. This section waits for that SDK feature before its stamp; §1 does not.
 
 - [ ] Implement `isotone::ui::TextStore` as `ITextStoreACP2` over `TextModel`: the read and write lock protocol with `RequestLock` and its reentrancy rules (a synchronous request during a lock refused, an asynchronous one queued), the text and selection queries, and the change sinks. Done when: `TextStore.LockProtocolRefusesReentrantSync` and `TextStore.QueuesAsyncLockDuringLock` pass against a fake TSF manager.
 - [ ] Handle composition start, update, commit, and cancel; end a composition cleanly when focus moves; and report the text extent so the candidate window lands under the composition at the window's DPI, correct across monitors of different DPI. Done when: `TextStore.CompositionLifecycle`, `TextStore.FocusChangeEndsComposition`, and `TextStore.CandidateRectAtMixedDpi` pass.

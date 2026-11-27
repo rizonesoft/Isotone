@@ -235,6 +235,8 @@ An HDR document is only useful if values above 1.0 survive every edit and the us
 
 **Requires:** display-session -- HDR output needs a Windows HDR display and captures of the preview panel need an interactive desktop
 
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): this section was written for the managed stack and is re-planned native by `D00 T07`; wherever it names a Windows, DirectX, or system API (`HwndHost`, a DXGI swap chain, and the HDR queries), the re-planned section calls the operating system only through Impossible SDK (`D01 T28`, `D00 T08`), a GPU path keeps a CPU path, and an SDK feature it needs that the SDK lacks is built first in the Impossible SDK repository by Isotone's session, then `native/sdk.json` moves.
+
 - [ ] Replace the normalized `Bpc32` maximum in `src/Gesso/Isotone.Gesso.Core/Documents/BitDepth.cs` with scene-linear float where 1.0 is reference white and values above 1.0 and below 0.0 are kept (IP-1508, IP-1513). Done when: `UnboundedFloatTests.ValueAboveOne_Survives` saves and reopens a 32-bit document with a 4.0 pixel through levels, normal blend, move, and save exactly.
 - [ ] Audit every blend mode for float: modes whose formula is undefined above 1.0 clamp only their inputs, documented per mode in `docs/dev/gesso/float-blend-modes.md`. Done when: `FloatBlendModeTests` assert each mode's behavior at 2.0 against the documented rule.
 - [ ] Disable filters not declared float-safe by the `D01 T06 §1` contract in 32-bit documents with a tooltip naming the reason. Done when: `MenuAuditTests` pass and a test asserts a non-float-safe filter is disabled with its reason.

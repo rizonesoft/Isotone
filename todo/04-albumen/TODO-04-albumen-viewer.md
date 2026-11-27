@@ -366,6 +366,8 @@ IrfanView's quick slideshow plays a folder or a hand-picked list with music in s
 
 **Requires:** display-session -- playback is driven on screen
 
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): this section was written for the managed stack and is re-planned native by `D00 T07`; wherever it names a Windows, DirectX, or system API (the Media Foundation Media Engine), the re-planned section calls the operating system only through Impossible SDK (`D01 T28`, `D00 T08`), a GPU path keeps a CPU path, and an SDK feature it needs that the SDK lacks is built first in the Impossible SDK repository by Isotone's session, then `native/sdk.json` moves.
+
 - [ ] Add `QuickSlideshowList` in `src/Albumen/Isotone.Albumen.Core/Viewer/Slideshow/QuickSlideshowList.cs` (LP-0093, LP-0094): add, add all, remove, sort by name, date, size, extension, or EXIF date, insert position, a remembered start index, and per-image duration and caption. Done when: `QuickSlideshowListTests` cover each operation.
 - [ ] Add the Slideshow dialog on `W` (LP-0092) in `src/Albumen/Isotone.Albumen.Viewer/Slideshow/SlideshowDialog.xaml` over the list. Done when: a driven dialog adds a folder, reorders two files, and plays (capture).
 - [ ] Add the start points (LP-0088, LP-0090): from the viewer, the current folder, a selection, the last used folder, automatic viewing, and append or remove the current file; Save and Append to a slideshow list. Done when: each start point opens the dialog with the expected list in a driven run.

@@ -23,6 +23,7 @@ track: F3
 - -> XREF: D01 T15 §2 -- the renderer whose resources this file rebuilds
 - -> XREF: D00 T07 §3 -- authored this file; every entry section waits on its stamp
 - -> XREF: D01 T25 §1 -- the goldens render on the WARP device this file selects
+- -> XREF: D01 T28 §2 -- the CPU path rule that §2's fallback follows
 
 ## Outcome
 
@@ -50,6 +51,8 @@ track: F3
 
 Each device loss writes one line to the audit log with the removal reason and the time the rebuild took.
 
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): the renderer holds no Direct2D or DXGI device, so the loss this section recovers from is the SDK `gpu` tier's. (1) Any `gpu` call that can see the loss (presenting, resizing the swap chain, creating a resource) returns a lost status on the calling thread, after which the device and everything made on it are invalid and the program recreates the device and its resources or carries on with its CPU path. The detection item reads that status in place of `DXGI_ERROR_DEVICE_REMOVED`, `DXGI_ERROR_DEVICE_RESET`, and `D2DERR_RECREATE_TARGET`; Direct2D is not used, so the third signal does not exist and `Renderer.RecreatesTargetAfterInjectedSignal` is dropped, while `Renderer.RebuildsAfterInjectedRemoval` runs through the SDK's test hook in the Windows half of its `gpu` part, once at presentation and once during a resize. (2) The resource registry of `Renderer.EveryResourceHasACpuSource` lists the `gpu` resources only (buffers, textures, shaders): the CPU draw resources have no device to lose. (3) The `device-loss` scenario forces the loss through that hook in place of the debug layer or `dxcap -forcetdr`, and the canvas keeps drawing, on the GPU after the rebuild or on its CPU path. The GPU surface this protects is the canvas (`D01 T24 §1`); the interface is drawn on the CPU and has no device to lose.
+
 - [ ] Make every GPU object (device, Direct2D device and context, DirectComposition device and visuals, swap chains, bitmaps, brushes, text layouts' device resources) owned by `isotone::ui::Renderer` and recreatable from CPU-side descriptions, with no document data held only in video memory. Done when: `Renderer.EveryResourceHasACpuSource` enumerates the renderer's resource registry and finds a source for each.
 - [ ] Detect `DXGI_ERROR_DEVICE_REMOVED` and `DXGI_ERROR_DEVICE_RESET` from a present or any device call, and `D2DERR_RECREATE_TARGET` from `EndDraw` or `Flush`, then release, recreate, and redraw, logging the reason (`GetDeviceRemovedReason`) and the time the rebuild took. Done when: `Renderer.RebuildsAfterInjectedRemoval` and `Renderer.RecreatesTargetAfterInjectedSignal` pass through a test hook that returns each code once.
 - [ ] Add the host scenario `device-loss` that draws known content, forces a removal (the Direct3D debug layer's device removal where available, else `dxcap -forcetdr`, recording which), waits for the rebuild, and compares the redrawn frame with the frame before. Done when: the report gives the forcing method, the rebuild time, and an identical frame.
@@ -64,6 +67,8 @@ Each device loss writes one line to the audit log with the removal reason and th
 **Requires:** display-session -- convicted by docs/specs/2026-10-22-native-stack-design.md, "Device loss" (start on WARP with the hardware adapter hidden)
 
 The WARP notice is this file's one user notification: the host can show it while the software device draws and clears itself when the hardware device returns.
+
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): WARP is not used. The SDK's `gpu` part loads `d3d11.dll` and `dxgi.dll` at run time and reports that no GPU is there when the library cannot load, a required export is missing, or no adapter offers the required feature level, so the fallback is the CPU path (every GPU feature keeps one, `D01 T28 §2`), not a software Direct3D device. `Renderer.FallsBackToWarp` becomes `Canvas.FallsBackToCpuPath`, proved for each of those three start-up failures through the SDK's test hooks, and `warp-start` becomes `cpu-start`, which names the CPU path and runs the `partial-redraw` checks on it with `mismatched_frames: 0`. The notice stays, once per session, saying the app is drawing without the GPU and why. The goldens no longer render on WARP (`D01 T25 §1`), and the edge to this section stays so the order is unchanged.
 
 - [ ] When creating the hardware device fails, or a test switch hides the hardware adapter, create the device on `D3D_DRIVER_TYPE_WARP` and continue, logging the failure and the fallback. Done when: `Renderer.FallsBackToWarp` passes with the hardware path forced to fail.
 - [ ] Show one notice per session that the app is drawing in software and may be slower, with the reason, and never again in that session. Done when: the host scenario reports the notice shown once.

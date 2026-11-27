@@ -35,6 +35,7 @@ The two shared libraries: `isotone::core` (non-UI services, `native/core/`) and 
 | [TODO-25](./TODO-25-foundation-goldens.md) | Foundation: the Goldens Environment and Its Repeatability Proof | draft |
 | [TODO-26](./TODO-26-foundation-crash-diagnostics.md) | Foundation: Crash Diagnostics by an Out-of-Process Watcher | draft |
 | [TODO-27](./TODO-27-foundation-core-services.md) | Foundation: App-Data Paths, Structured Logging, Atomic Writes, and the Settings Store | draft |
+| [TODO-28](./TODO-28-foundation-sdk-platform.md) | Foundation: isotone::core and isotone::ui on Impossible SDK, the CPU Path Rule, and the Canvas Frame Benchmark | draft |
 
 ## Completed
 

@@ -29,7 +29,7 @@ Settings and logs live under `%LOCALAPPDATA%\Rizonesoft\Stilus\`.
 
 ## Canvas and tools
 
-- The canvas is its own visual with its own swap chain, drawn by the vector engine through Direct2D geometry on the render thread from an immutable snapshot. Rendering allocates nothing per frame: geometry realizations, brushes, and text layouts are cached and invalidated by the document's change events, and every GPU resource is rebuilt after device loss.
+- The canvas is its own visual with its own swap chain, drawn by the vector engine through the SDK's `draw` part (paths, clips, and layers) or, for a GPU surface, the SDK's `gpu` tier with a CPU path, on the render thread from an immutable snapshot. Rendering allocates nothing per frame: geometry realizations, brushes, and text layouts are cached and invalidated by the document's change events, and every GPU resource is rebuilt after device loss.
 - A tool is registered once in the composition root. It owns its cursor, its shortcut (through the command registry), and its on-canvas overlay, and it records its edits as commands.
 - Modifier keys match the competitor norm: Shift constrains (angles to 15 degrees, proportions), Alt works from the center, Space pans temporarily. Menus, tools, panels, dialogs, and their terms sit where an Illustrator user expects them, by the layout map Stilus's sections cite (`D01 T13`).
 

@@ -24,6 +24,8 @@ track: F11
 - -> XREF: D01 T18 §2 -- the render thread and the bounded GPU queue the canvas draws through
 - -> XREF: D00 T07 §3 -- authored this file; every entry section waits on its stamp
 - -> XREF: D01 T22 §2 -- the runner that injects pen samples with known timestamps
+- -> XREF: D01 T28 §2 -- the registry of GPU features and their CPU paths the canvas joins
+- -> XREF: D01 T28 §3 -- the frame benchmark that measures the 100-megapixel pan on this canvas
 
 ## Outcome
 
@@ -38,7 +40,7 @@ track: F11
 
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
-|   1   |   §1    | The canvas visual, its swap chain, and pen input with every sample | D00 T07 §3, D01 T18 §2 |  [ ]   |
+|   1   |   §1    | The canvas visual, its swap chain, and pen input with every sample | D00 T07 §3, D01 T18 §2, D01 T28 §2 |  [ ]   |
 |   2   |   §2    | Measuring the frame cadence and pen latency goals under load | §1, D01 T22 §2 |  [ ]   |
 
 ---
@@ -48,6 +50,8 @@ track: F11
 **Fidelity:** no surface of its own (non-feature infrastructure: a foundation mechanism with no competitor-facing feature of its own, so no `**Exceed:**` paragraph; the product sections that use it carry theirs) -- the canvas mechanism with placeholder content.
 **Needs:** Windows host (build/test)
 **Requires:** display-session -- convicted by docs/specs/2026-10-22-native-stack-design.md, "Rendering" (the canvas presents to a live window)
+
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): the canvas is the one GPU surface of the interface, and it keeps a CPU path (`D01 T28 §2`). (1) `isotone::ui::Canvas` is a second SDK present surface drawn on the SDK's `gpu` tier (its Direct3D 11 subset), panned and zoomed from the render thread's snapshots without redrawing the interface; the composition visual and the flip-sequential swap chain are the SDK's, so `Canvas.RedrawsIndependentlyOfInterface` and the `canvas-pan` scenario prove the same thing over the SDK's presentation. (2) The same canvas draws through the SDK's `draw` part when the `gpu` part reports no GPU, the canvas registers both paths in `native/gpu-features.txt`, and `Canvas.CpuPathMatchesGpuPath` compares them within the canvas tolerance on the placeholder tiles. (3) Pen input arrives as SDK input events with every coalesced sample and its timestamp in place of `WM_POINTER` and `GetPointerInfoHistory`, and `Canvas.ReadsEveryCoalescedSample` reads a recorded SDK sample history; if the window part lacks coalesced pen samples with timestamps, that is built first in the Impossible SDK repository (window part, pen input topic). The GPU path waits for the SDK's `gpu` tier; the CPU path and the pen input do not.
 
 - [ ] Add `isotone::ui::Canvas` in `native/ui/src/canvas/`: a DirectComposition visual with its own flip-sequential waitable swap chain (maximum frame latency 1), drawn by the render thread from snapshots of placeholder tiles, panned and zoomed without redrawing the interface visual. Done when: `Canvas.RedrawsIndependentlyOfInterface` passes and the host scenario `canvas-pan` reports no interface present during a pan.
 - [ ] Take pen input through `WM_POINTER`, reading every coalesced sample with `GetPointerInfoHistory` and its `POINTER_INFO.PerformanceCount`, recording which samples each presented frame drew and its present id. Done when: `Canvas.ReadsEveryCoalescedSample` passes with a recorded pointer history.
@@ -60,6 +64,8 @@ track: F11
 **Fidelity:** no surface of its own (non-feature infrastructure: a foundation mechanism with no competitor-facing feature of its own, so no `**Exceed:**` paragraph; the product sections that use it carry theirs) -- a measurement harness.
 **Needs:** Windows host (build/test)
 **Requires:** display-session -- convicted by docs/specs/2026-10-22-native-stack-design.md, "The goals" (presentation statistics of a live display)
+
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): frame times come from the SDK's presentation timing, with PresentMon over the same run as the cross-check, in place of `IDXGISwapChain::GetFrameStatistics`, and `frame-cadence` is run on the GPU path and again on the CPU path with the figures kept separate. Pen samples are timed with the SDK's sample timestamps in the same clock domain as its presentation timing. The 100-megapixel pan at a 37-degree rotation is `D01 T28 §3`'s benchmark and is not repeated here.
 
 - [ ] Add the host scenario `frame-cadence` that pans, zooms, resizes a panel, and resizes the window for 60 s each while a GPU filter (a stand-in that enqueues hundreds of bounded dispatches) and background tasks run and two floating panels are open, taking displayed-frame times from `IDXGISwapChain::GetFrameStatistics` and PresentMon. Done when: its report gives, per activity, the refresh rate, the missed vsyncs per 1,000 frames, and the longest gap.
 - [ ] Add `CanvasDrive.PenLatency` that injects pen strokes through the driven-input runner and measures each sample from its `PerformanceCount` to the vsync of the first displayed frame that shows it, counting a merged sample at the later display time and a dropped sample as a failure. Done when: its report gives the share of samples within one refresh interval plus 4 ms and the worst sample.

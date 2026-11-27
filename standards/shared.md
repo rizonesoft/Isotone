@@ -6,13 +6,13 @@ Cross-cutting standards for every app in the Isotone Graphics Suite (Stilus, Ges
 
 | Concern | Choice | Notes |
 | ------- | ------ | ----- |
-| Language | C++23, compiled by the pinned MSVC toolset | One standard switch, set in `native/cmake/IsotoneTargets.cmake` and held by `scripts/native-std-check.py`; see [`cpp.md`](cpp.md) |
+| Language | C++23, compiled by the SDK toolchain (clang) for shipping builds and by the pinned MSVC toolset for developer tools | One standard switch, set in `native/cmake/IsotoneTargets.cmake` and held by `scripts/native-std-check.py`; see [`cpp.md`](cpp.md) |
 | Build | CMake with Ninja, the presets in `native/CMakePresets.json` | Every build runs inside the toolchain `native/toolchain.json` pins, entered by `scripts/dev-env.ps1`; x64 and ARM64 from the first commit |
-| Runtime | The static C runtime (`/MT`) | No redistributable is installed with an app, and every imported DLL is a Windows system DLL (`native/system-dlls.txt`, `scripts/native-artifact-gate.py`) |
-| UI | `isotone::ui`, our own toolkit on Win32, Direct2D, DirectWrite, Direct3D 11, and DirectComposition | **No third-party UI framework.** A control, a theme engine, or a docking library from outside is a defect |
+| Runtime | libc++ from Impossible SDK's `cxx` part, linked statically (the MSVC build of the tools keeps `/MT`) | No redistributable is installed with an app, and a shipping program passes the SDK's boundary checks and import check (`D00 T08 §2`); the MSVC build's imports stay Windows system DLLs (`native/system-dlls.txt`, `scripts/native-artifact-gate.py`) |
+| UI | `isotone::ui`, our own toolkit on Impossible SDK (its `window`, `draw`, and `text` parts and its Direct3D 11 `gpu` tier), so no Windows call is made outside the SDK (owner decision 2026-11-27) | **No third-party UI framework.** A control, a theme engine, or a docking library from outside is a defect |
 | App structure | Documents and commands in the app's core library, surfaces in `isotone::ui` elements | One composition root per app; every command is registered once in the command registry of `isotone::core` |
 | Logging | The structured log of `isotone::core` | Configured once per app; one line per action that changes a document or a setting |
-| Rendering | Direct2D and DirectWrite for the interface and vector content; the shared pixel engine for raster content; Direct3D 11 for the GPU paths | A rendering library joins only for a measured need Direct2D cannot meet, through the dependency register |
+| Rendering | The SDK's `draw` and `text` parts for the interface and vector content; the shared pixel engine for raster content; the SDK's `gpu` tier for the GPU paths, each GPU feature with a CPU path registered in `native/gpu-features.txt` | A rendering library joins only for a measured need the SDK's parts cannot meet, through the dependency register; a missing SDK feature is built in the Impossible SDK repository first |
 | Packages | vcpkg in manifest mode, one committed baseline, static triplets | Every library enters through the register `docs/dev/native-libraries.md` |
 | Tests | GoogleTest through CTest, Google Benchmark, libFuzzer | See [`testing.md`](testing.md) |
 | Settings and JSON | Atomic JSON settings through `isotone::core` | The JSON library is nlohmann/json (`D01 T27 §2`, `docs/dev/native-libraries.md`), included only inside `isotone::core` |

@@ -88,6 +88,8 @@ A style reads keys, so a change of theme, Highlight, density, or a Windows signa
 
 Each theme, Highlight, density, or contrast change writes one line to the host's audit log, and setting the previous value again reverses it exactly, so the change needs no undo entry of its own.
 
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): high contrast, reduced motion, and DPI changes reach `isotone::ui` as events of the SDK's `window` part, not as `WM_SETTINGCHANGE`, `SPI_GETCLIENTAREAANIMATION`, or `WM_DPICHANGED` handled here, and the `Theme.HighContrastMapsToSystemColors` proof reads the SDK's system-colour query. A setting the window part does not yet report is built first in the Impossible SDK repository (window part, system settings topic), then the pin moves.
+
 - [ ] Add key-level change tracking to `isotone::ui::Theme`: a style registers the keys it read, and a state change computes the changed keys and invalidates only those styles. Done when: `Theme.SwitchInvalidatesOnlyReaders` passes, with a style that reads no changed key not invalidated.
 - [ ] Persist the user's theme, Highlight, and density through the settings store of `D01 T27 §2` (atomic write and readback), logging one line per change through its logger. Done when: `Theme.ChoicePersistsAndReadsBack` passes and the change's log line is asserted.
 - [ ] Handle `WM_SETTINGCHANGE` for high contrast, `SPI_GETCLIENTAREAANIMATION` for reduced motion, and `WM_DPICHANGED` in the window, each re-resolving and invalidating. Done when: `Theme.HighContrastMapsToSystemColors` passes and the host reports each signal handled.

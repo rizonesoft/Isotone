@@ -34,8 +34,8 @@ Rendering, compositing, painting, and input are hot paths ([`cpp.md`](cpp.md), "
 
 ## GPU
 
-- The GPU paths run on Direct3D 11 through the render thread, which owns the immediate context; engine work is cut into bounded dispatches the render thread interleaves with interface and canvas frames, interface frames first.
-- Every GPU resource has one owner that can rebuild it from CPU-side state. A device loss, or a machine with no usable hardware device, falls back to the CPU path (or the WARP software device for the interface), logs one Warning, and produces the same pixels within the tolerance the tests state: at most 1 code value at 8-bit, at most 4 at 16-bit, and for float the larger of 2^-16 absolute and 2^-16 relative.
+- The GPU paths run on the SDK's `gpu` tier (its Direct3D 11 subset) through the render thread, which owns the `gpu` part's device context; engine work is cut into bounded dispatches the render thread interleaves with interface and canvas frames, interface frames first.
+- Every GPU resource has one owner that can rebuild it from CPU-side state. A device loss, or a machine with no usable hardware device, falls back to the CPU path (the interface is always drawn on the CPU), logs one Warning, and produces the same pixels within the tolerance the tests state: at most 1 code value at 8-bit, at most 4 at 16-bit, and for float the larger of 2^-16 absolute and 2^-16 relative.
 - HLSL naming: constant buffers `cbPascalCase`, textures `tPascalCase`, samplers `sPascalCase`; one shader per file.
 
 ## Formats

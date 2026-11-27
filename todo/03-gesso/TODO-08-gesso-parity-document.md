@@ -92,6 +92,7 @@ track: I8
 - -> XREF: D03 T12 §5 -- Gesso parity painting cites §6: snapshots as history brush sources; §1: the `gesso:` contract fill, pattern, and symmetry elements register with
 - -> XREF: D03 T14 §1 -- Gesso parity filters cites §1: the `gesso:` contract for filter stacks, live filter layers, planes, and projections
 - -> XREF: D03 T23 §1 -- Gesso video and animation cites §1: the gesso: contract and PNG fallback video layers, timelines, and frames persist through; §6: the history timeline and frame edits record into; §8: the Purge commands D03 T23 §1 adds Video Cache to
+- -> XREF: D01 T28 §3 -- the frame benchmark through presentation that §3's 100-megapixel pan budget is measured with
 
 ## Outcome
 
@@ -209,6 +210,8 @@ Today zoom is one scalar clamped at 3,200 percent, and the canvas cannot rotate 
 
 **Requires:** display-session -- zoom, rotation, flicks, screen modes, and frame-time measurement need an interactive desktop
 
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): the 100-megapixel pan budget is measured by `D01 T28 §3`'s frame benchmark (`native/benchmarks/frame`), through presentation on the same machine, with the CPU path and the GPU path measured separately and pixels and timings judged separately; this section consumes its report and adds no harness of its own. Where this section names the GPU path, it goes through Impossible SDK's `gpu` tier and keeps a CPU path (`D01 T28 §2`).
+
 - [ ] Add `ViewState` in `src/Gesso/Isotone.Gesso.Desktop/View/ViewState.cs` per window: zoom, center in document coordinates, rotation in degrees, flip horizontal and vertical, screen mode, and show-all. Done when: two windows on one document hold independent states and no change to either enters history.
 - [ ] Add `ViewTransform` in `src/Gesso/Isotone.Gesso.Desktop/View/ViewTransform.cs` composing scale, rotation about the view center, flip, and §1's pixel-aspect correction, with an exact inverse. Done when: `ViewTransformTests` round-trip 10,000 random points under rotation, flip, and pixel aspect within 1e-9.
 - [ ] Route hit testing, the rulers, the overlays, and every tool's pointer mapping through `ViewTransform.Inverse` in `src/Gesso/Isotone.Gesso.Desktop/Controls/Canvas/`. Done when: `ToolCoordinatesUnderRotationTests` place a brush dab at a document point at 37 degrees with the view flipped and it lands on that point. Cheaper substitute: a WPF `RotateTransform` on the canvas control.
@@ -224,7 +227,7 @@ Today zoom is one scalar clamped at 3,200 percent, and the canvas cannot rotate 
 - [ ] Add Extras (Ctrl+H, IP-0041, IP-0042) as the master toggle over layer edges, selection edges, target path, notes, count, pixel grid, guides, smart guides, slices, and canvas boundary, with a Show Extras Options dialog. Done when: turning Extras off hides every overlay and on restores the checked ones.
 - [ ] Add Preview mode (IP-0043, IP-0045, `Gesso.View.PreviewMode`) hiding guides, grids, margins, and bleed, as Affinity does. Done when: a capture in Preview mode shows no overlay.
 - [ ] Extend `D03 T02 §2`'s pixel grid (IP-0044) with View, Show, Pixel Grid, `Gesso.View.PixelGridMinZoom` (default 600 percent), and color and opacity keys. Done when: the grid appears at 600 percent and not at 500.
-- [ ] Measure panning a 100-megapixel document at a 37-degree view rotation. Done when: the median frame is under 16 ms, quoted with the machine.
+- [ ] Measure panning a 100-megapixel document at a 37-degree view rotation with `native/benchmarks/frame` (`D01 T28 §3`), through presentation. Done when: the median frame is under 16 ms on each path the app ships, quoted with the machine.
 - [ ] Add View menu, Zoom tool, Rotate View tool, and Screen Modes pages to `docs/user/gesso/`. Done when: every command above is covered.
 - [ ] Commit: `"gesso: zoom, rotate and flip view, and screen modes"`
 
@@ -390,6 +393,8 @@ Cut, Copy, and Paste only log today. This section builds one clipboard service t
 **Chrome:** consume §2's `ClipboardImageReader` (extended), §1's contract for live layers, `TileSnapshotCommand`, and AvalonDock. Do not add a second clipboard wrapper.
 
 **Requires:** display-session -- clipboard exchange with other apps and the Buffers panel need an interactive desktop
+
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): this section was written for the managed stack and is re-planned native by `D00 T07`; wherever it names a Windows, DirectX, or system API (the Windows clipboard formats), the re-planned section calls the operating system only through Impossible SDK (`D01 T28`, `D00 T08`), a GPU path keeps a CPU path, and an SDK feature it needs that the SDK lacks is built first in the Impossible SDK repository by Isotone's session, then `native/sdk.json` moves.
 
 - [ ] Add `GessoClipboard` in `src/Gesso/Isotone.Gesso.Desktop/Clipboard/GessoClipboard.cs` writing PNG (straight alpha) and `CF_DIBV5`, with delayed rendering for large copies. Done when: `ClipboardFormatTests` round-trip PNG alpha and DIBV5 straight and premultiplied conversion. Source: https://learn.microsoft.com/windows/win32/dataxchg/standard-clipboard-formats
 - [ ] Add the private `Isotone.Gesso.Layers` format serializing the copied layers through §1 so live layers paste live between Gesso windows. Done when: `LiveLayerClipboardTests` paste a probe live layer live.
@@ -562,6 +567,8 @@ Beyond the zoom ladder and view transform of §3, users navigate with modifier g
 **Chrome:** consume §3's `ViewState`, `ViewTransform`, and zoom ladder, `D03 T03 §4`'s temporary-tool mechanism, the keymap, and the settings store. Do not add a second zoom model.
 
 **Requires:** display-session -- gestures, flicks, touchpad rotation, and print-size measurement need an interactive desktop
+
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): this section was written for the managed stack and is re-planned native by `D00 T07`; wherever it names a Windows, DirectX, or system API (`GetDeviceCaps`), the re-planned section calls the operating system only through Impossible SDK (`D01 T28`, `D00 T08`), a GPU path keeps a CPU path, and an SDK feature it needs that the SDK lacks is built first in the Impossible SDK repository by Isotone's session, then `native/sdk.json` moves.
 
 - [ ] Add pointer navigation keys (IP-0028, IP-0048): wheel zooms or scrolls (`Gesso.Navigation.WheelZooms`), zoom to the clicked point (`Gesso.Navigation.ZoomToClickedPoint`), and Space pans or moves (`Gesso.Navigation.SpaceBar`). Done when: toggling each key changes the gesture in a driven run (settings readback quoted).
 - [ ] Add scrubby zoom by dragging with the Zoom tool (`Gesso.Navigation.ScrubbyZoom`), animated zoom while held (`Gesso.Navigation.AnimatedZoom`), and drag-to-zoom speed (`Gesso.Navigation.DragZoomSpeed`) (IP-0029). Done when: each works in a driven run and its key is read by the Zoom tool.

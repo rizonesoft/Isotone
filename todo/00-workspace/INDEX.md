@@ -8,6 +8,7 @@ Toolchain, solution, gates, CI, and the TODO system every later domain leans on.
 
 | TODO | Title | Status |
 | ---- | ----- | :----: |
+| [TODO-08](./TODO-08-sdk-platform-build.md) | Impossible SDK as the Build Platform: the Pins, the SDK-Toolchain Release, and the Boundary Checks | draft |
 | [TODO-07](./TODO-07-native-replan.md) | The Native Re-plan, Phase by Phase | draft |
 | [TODO-05](./TODO-05-native-spine.md) | The Native Spine: Toolchain, Build, Gates, and CI | active |
 

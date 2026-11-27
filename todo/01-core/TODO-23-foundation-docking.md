@@ -51,6 +51,8 @@ track: F10
 
 The dock layout is a setting: it is saved with atomic write and readback, and a restored layout is clamped onto a visible monitor.
 
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): a floating panel is a top-level window of the SDK's `window` part: `float(panel, rect)` creates it there, hosts the panel's element subtree in it, and clamps it to the monitor rectangles the SDK reports; no Win32 window is created here.
+
 - [ ] Add `isotone::ui::DockLayout` in `native/ui/src/dock/`: a tree of columns holding panels, `float(panel, rect)` creating a top-level tool window that hosts the panel's element subtree, and `dock(panel, column, index)` returning it, with each panel's state (scroll position, its control values) kept across both. Done when: `DockLayout.FloatAndDockKeepPanelState` passes.
 - [ ] Save the layout as JSON (columns, order, widths in DIPs, floating windows with their monitor-relative rectangles) with atomic write and readback, and restore it, clamping a floating window onto a visible monitor. Done when: `DockLayout.SaveRestoreRoundTrip` and `DockLayout.ClampsOffscreenFloat` pass.
 - [ ] Commit: `"ui: the dock layout with floating panels"`
@@ -64,6 +66,8 @@ The dock layout is a setting: it is saved with atomic write and readback, and a 
 **Requires:** display-session -- convicted by docs/specs/2026-10-22-native-stack-design.md, "Testing and the gates" (docking windows keep their own driven tests on real hardware)
 
 Every float is reversed by redocking: the layout can restore the panel to the column and index it came from.
+
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): dragging reads SDK input events for mouse and pen in place of `WM_POINTER`, and `DockDrive.DragOutAndBack` is a test tool as in `D01 T22 §2`.
 
 - [ ] Drag a panel's header out of its column to float it, showing the drop target while dragging, and drag the floating window's header onto a column to redock it, through `WM_POINTER` input. Done when: the host's report records each transition.
 - [ ] Add `DockDrive.DragOutAndBack` that drags the panel out and back with mouse and with pen input through the driven-input runner, on one monitor and across two monitors of different DPI where the machine has them, and reads the layout and the panel's state back through UI Automation after each move. Done when: it passes and its report names the monitors used.

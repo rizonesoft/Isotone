@@ -2,7 +2,7 @@
 
 The order to run every section in, from today to independently distributed releases of Stilus, Gesso, and Albumen and the first Isotone Graphics Suite bundle.
 
-> **Progress:** **47 of 871 sections complete (5%).** 871 sections (8 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
+> **Progress:** **47 of 876 sections complete (5%).** 876 sections (8 discovered); backlog 49 entries. Derived from the Implementation Order tables by `python scripts/todo-graph.py plan --sync` -- never edited by hand.
 >
 > **Plan/graph parity.** Every numbered TODO section, open or shipped, appears in exactly one phase table row. `plan --check` enforces missing, unknown, duplicate, and status parity. Read live totals from the generated Progress line above and `python scripts/todo-graph.py query stats`; never repeat a fixed denominator in prose.
 
@@ -212,6 +212,10 @@ Every later phase builds on the native stack's foundations, so this phase proves
 | [x] | `D01 T27 §2` | Atomic File Writes and the Settings Store                                                           |   6   |
 | [x] | `D01 T14 §1` | The isotone::ui Library and the Generated Token Tables                                              |   7   |
 | [x] | `D01 T15 §1` | The Window, DPI Layout, and the Foundation Test Host                                                |   5   |
+| [ ] | `D00 T08 §1` | The SDK Pin, the App Manifests, and the Runtime Register                                            |   7   |
+| [ ] | `D00 T08 §2` | The SDK-Toolchain Release Build and the Boundary Checks in CI                                       |   8   |
+| [ ] | `D01 T28 §1` | isotone::core and the Window on the SDK's Base and Window Parts                                     |   6   |
+| [ ] | `D01 T28 §2` | The CPU Path Rule for Every GPU Feature                                                             |   4   |
 | [ ] | `D01 T15 §2` | The Renderer: Device, Visuals, Flip-Sequential Swap Chains, and Partial Redraw                      |   5   |
 | [ ] | `D01 T14 §2` | Run-Time Resolution and Live Switching, Proved in the Host                                          |   5   |
 | [ ] | `D01 T15 §3` | The Isotone Title Bar with the Menu Bar, and Snap Layouts                                           |   5   |
@@ -241,6 +245,7 @@ Every later phase builds on the native stack's foundations, so this phase proves
 | [ ] | `D01 T23 §1` | The Dock Layout: Columns, a Floating Window, and Its JSON                                           |   3   |
 | [ ] | `D01 T23 §2` | Float and Redock by Dragging, Proved with Real Pointer Input                                        |   3   |
 | [ ] | `D01 T24 §1` | The Canvas Visual, Its Swap Chain, and Pen Input with Every Sample                                  |   3   |
+| [ ] | `D01 T28 §3` | The Canvas Frame Benchmark through Presentation                                                     |   5   |
 | [ ] | `D01 T24 §2` | Measuring the Frame Cadence and Pen Latency Goals under Load                                        |   4   |
 | [ ] | `D01 T25 §1` | Offscreen Rendering on WARP in the Pinned Environment                                               |   3   |
 | [ ] | `D01 T25 §2` | Compare and Approve, in the Gates                                                                   |   3   |

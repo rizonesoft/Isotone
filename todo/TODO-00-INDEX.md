@@ -42,6 +42,7 @@ The Phase column is the coarse domain grouping, not an executable schedule. Curr
 
 | TODO | Domain | Title |
 | ---- | ------ | ----- |
+| [TODO-08](./00-workspace/TODO-08-sdk-platform-build.md) | 00-workspace | Impossible SDK as the Build Platform: the Pins, the SDK-Toolchain Release, and the Boundary Checks |
 | [TODO-07](./00-workspace/TODO-07-native-replan.md) | 00-workspace | The Native Re-plan, Phase by Phase |
 | [TODO-14](./01-core/TODO-14-foundation-theming.md) | 01-core | Foundation: Runtime Theming from the Design Tokens |
 | [TODO-15](./01-core/TODO-15-foundation-window.md) | 01-core | Foundation: a Window with the Isotone Title Bar on the Swap Chain and Partial-Redraw Contract |
@@ -57,6 +58,7 @@ The Phase column is the coarse domain grouping, not an executable schedule. Curr
 | [TODO-25](./01-core/TODO-25-foundation-goldens.md) | 01-core | Foundation: the Goldens Environment and Its Repeatability Proof |
 | [TODO-26](./01-core/TODO-26-foundation-crash-diagnostics.md) | 01-core | Foundation: Crash Diagnostics by an Out-of-Process Watcher |
 | [TODO-27](./01-core/TODO-27-foundation-core-services.md) | 01-core | Foundation: App-Data Paths, Structured Logging, Atomic Writes, and the Settings Store |
+| [TODO-28](./01-core/TODO-28-foundation-sdk-platform.md) | 01-core | Foundation: isotone::core and isotone::ui on Impossible SDK, the CPU Path Rule, and the Canvas Frame Benchmark |
 | [TODO-01](./07-tinctura/TODO-01-tinctura-plan.md) | 07-tinctura | Tinctura: Plan the Color Picker and Color Studio App |
 | [TODO-01](./08-capio/TODO-01-capio-plan.md) | 08-capio | Capio: Plan the Screenshots and Screen Recording App |
 | [TODO-01](./09-folium/TODO-01-folium-plan.md) | 09-folium | Folium: Plan the Page Layout and Publishing App |

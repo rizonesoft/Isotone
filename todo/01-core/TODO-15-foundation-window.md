@@ -38,6 +38,7 @@ track: F2
 - -> XREF: D01 T19 §5 -- the recovery scenario runs in this file's foundation test host
 - -> XREF: D01 T27 §2 -- the host logs and keeps its settings through the core services foundation
 - -> XREF: D01 T01 §7 -- the shared window chrome of the UI library, re-planned by `D00 T07 §5`, builds the product title bar on this file's title bar mechanism
+- -> XREF: D01 T28 §1 -- moves the shipped window and `isotone::core` onto the SDK parts this file's renderer and title bar are built on
 
 ## Outcome
 
@@ -55,7 +56,7 @@ track: F2
 | Order | Section | Deliverable | Depends On | Status |
 | :---: | :-----: | ----------- | ---------- | :----: |
 |   1   |   §1    | The window, DPI layout, and the foundation test host | D00 T07 §3, D01 T14 §1, D01 T27 §2 |  [x]   |
-|   2   |   §2    | The renderer: device, visuals, flip-sequential swap chains, and partial redraw | §1 |  [ ]   |
+|   2   |   §2    | The renderer: device, visuals, flip-sequential swap chains, and partial redraw | §1, D00 T08 §2, D01 T28 §1 |  [ ]   |
 |   3   |   §3    | The Isotone title bar with the menu bar, and snap layouts | §2 |  [ ]   |
 
 ---
@@ -94,6 +95,8 @@ One Direct3D 11 device per process with Direct2D and DirectWrite over it; each w
 **Needs:** Windows host (build/test)
 **Requires:** display-session -- convicted by docs/specs/2026-10-22-native-stack-design.md, "Swap chains and partial redraw" (the proof presents to a real window)
 
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): this renderer is built on Impossible SDK's `window` and `draw` parts, and no Direct3D, Direct2D, DirectWrite, DXGI, or DirectComposition call is named or made here (the items above and below keep their proofs and read as follows). (1) `isotone::ui::Renderer` draws the element tree with the SDK's `draw` part (paths, clips, layers, gradients, images) into the window's present surface and owns its draw resources; it holds no device and builds no Direct2D context, DirectWrite factory, or composition visual, so `Renderer.OneDevicePerProcess` becomes `Renderer.OwnsItsDrawResources` (every resource found in the renderer's registry) and the host reports the SDK's present path in place of an adapter. (2) The SDK's `window` part presents with dirty rectangles; the flip-sequential swap chain, `Present1`, and the waitable object are its own, and this section proves the contract over them: the report records the present path the SDK reports and the frame-latency goal stays measured by `D01 T24 §2`. (3) `DamageTracker` and the `partial-redraw` scenario prove what they proved (every presented frame equals a full redraw, with the same deliberate fault), taken over the SDK's presented pixels. A present feature the SDK lacks (dirty and scroll rectangles, per-buffer damage, presentation statistics) is built first in the Impossible SDK repository (window part, presentation topic) by Isotone's session, then `native/sdk.json` moves (`D00 T08 §1`). This is a CPU screen: it needs the SDK's `window`, `draw`, and `text` parts and its C++ support, and does not wait for the `gpu` tier. Read the two items about the device and the swap chain in that light: their done-when text is met by the SDK's path.
+
 - [ ] Add `isotone::ui::Renderer` in `native/ui/src/renderer.cpp`: one `ID3D11Device` with BGRA support per process, the Direct2D device and context over it (multithread-protected), the DirectWrite factory, and a DirectComposition device with one visual per window. Done when: `Renderer.OneDevicePerProcess` passes and the host reports the adapter it chose.
 - [ ] Create each window's swap chain with `DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL` for composition, waitable, with `SetMaximumFrameLatency(1)`, and present with `Present1` dirty and scroll rectangles. Done when: the host's report records the swap chain description and the waitable object.
 - [ ] Track damage per back buffer in `isotone::ui::DamageTracker`: each buffer's accumulated damage since it was last presented, and redraw the union. Done when: `DamageTracker.RotatingBuffersRedrawTheUnion` passes for two- and three-buffer chains with disjoint, overlapping, and scrolled damage.
@@ -109,6 +112,8 @@ The title bar is drawn by us with the menu bar inside it, by extending the DWM f
 **Fidelity:** no surface of its own (non-feature infrastructure: a foundation mechanism with no competitor-facing feature of its own, so no `**Exceed:**` paragraph; the product sections that use it carry theirs) -- the frame and hit-testing mechanism with placeholder menus; the product chrome and its goldens are the UI library's window chrome sections.
 **Needs:** Windows host (build/test)
 **Requires:** display-session -- convicted by docs/specs/2026-10-22-native-stack-design.md, "Windows and frames" (snap layouts and the caption are a live window's)
+
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): the frame, the caption, and hit testing are the SDK `window` part's. The title bar extends the frame and answers hit testing through the SDK's custom-frame support, not by calling `DwmExtendFrameIntoClientArea` or handling `WM_NCCALCSIZE` and `WM_NCHITTEST` here, and the proofs (`TitleBar.HitTestMap`, the `title-bar` scenario, and the snap-layouts screenshot) are unchanged, reading the region map from the SDK's window. If the SDK's window part lacks a caption with a maximize-button region for snap layouts, a menu bar inside the frame, or Alt mnemonics, that is built first in the Impossible SDK repository (window part, frame and caption topic), then the pin moves. This is a CPU screen and does not wait for the `gpu` tier.
 
 - [ ] Extend the frame with `DwmExtendFrameIntoClientArea` and handle `WM_NCCALCSIZE` so the client area covers the title bar, keeping the system's resize borders. Done when: the host's report gives the frame margins and the resize border width at 100 and 200 percent.
 - [ ] Answer `WM_NCHITTEST` with `HTCAPTION` over the title bar's free space, `HTMINBUTTON`, `HTMAXBUTTON`, and `HTCLOSE` over the caption buttons, `HTCLIENT` over the menu bar, and the border codes at the edges. Done when: `TitleBar.HitTestMap` passes over a grid of points at 100, 150, and 200 percent.

@@ -139,6 +139,8 @@ A whole photo drive becomes searchable only if something reads it in the backgro
 
 **Requires:** display-session -- the idle-indexing drive and frame-time measurement need an interactive desktop
 
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): this section was written for the managed stack and is re-planned native by `D00 T07`; wherever it names a Windows, DirectX, or system API (the Windows Task Scheduler), the re-planned section calls the operating system only through Impossible SDK (`D01 T28`, `D00 T08`), a GPU path keeps a CPU path, and an SDK feature it needs that the SDK lacks is built first in the Impossible SDK repository by Isotone's session, then `native/sdk.json` moves.
+
 - [ ] Add `IndexerService` in `src/Albumen/Isotone.Albumen.Core/Indexing/IndexerService.cs`: a priority queue of visible items, the selected folder, and indexed locations, persisting progress in the catalog so a restart resumes (LP-0185, LP-0187). Done when: `IndexerQueueTests` stop mid-folder, restart, and resume at the next unindexed file.
 - [ ] Run the worker at below-normal thread priority with background I/O priority (`SetThreadPriority` with `THREAD_MODE_BACKGROUND_BEGIN`). Done when: a test asserts the mode is set on the worker thread.
 - [ ] Detect idle through `GetLastInputInfo` against `Albumen.Indexer.IdleSeconds` (default 60), pause while the user develops or exports, and pause on battery when `Albumen.Indexer.PauseOnBattery` (default true) is on. Done when: tests with a stubbed clock and power source assert each pause and resume.

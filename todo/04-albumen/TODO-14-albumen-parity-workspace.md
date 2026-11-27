@@ -236,6 +236,8 @@ A user trades speed for disk and sees accurate color on their monitor. This sect
 
 **Requires:** display-session -- the display profile readout and purge need an interactive desktop
 
+**Revised 2026-11-27** (`docs/dev/decisions.md`, "2026-11-27: Isotone is built on Impossible SDK, as an Impossible OS app"): this section was written for the managed stack and is re-planned native by `D00 T07`; wherever it names a Windows, DirectX, or system API (DXGI adapter enumeration), the re-planned section calls the operating system only through Impossible SDK (`D01 T28`, `D00 T08`), a GPU path keeps a CPU path, and an SDK feature it needs that the SDK lacks is built first in the Impossible SDK repository by Isotone's session, then `native/sdk.json` moves.
+
 - [ ] Add the display color settings (LP-1110): the monitor profile per display read through `D01 T04 §1` (`WcsGetDefaultColorProfile`), the engine name, the default input profile for untagged images, the managed thumbnails toggle, and a profile details readout. Done when: `DisplayProfileSelectionTests` assert the per-display profile and the untagged default reach the display transform.
 - [ ] Refresh the display transform when a window moves to another monitor. Done when: a test with two fake monitors asserts the transform changes with the window.
 - [ ] Add the GPU preference (LP-1111): auto, custom, or off for display and preview work, and GPU preview generation, with a line stating the develop engine stays on the CPU until `D01 T07 §12` ships its GPU path. Done when: a test asserts the preview generator reads the key and the page text names `D01 T07 §12`. Cheaper substitute: a switch that changes nothing, which the consumer test catches.
