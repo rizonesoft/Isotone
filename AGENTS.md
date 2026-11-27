@@ -73,6 +73,15 @@ Domains are flat-numbered from `00`, allocated in order, and read from the tree:
 
 Files are `todo/NN-domain/TODO-NN-short-name.md`. The **Implementation Order table is the dependency graph**: every `## N.` section has exactly one row and vice versa, and a row flips to `[x]` only when a `Verified:` stamp covers it. Cross-references use section marks in the forms `§N`, `TNN §N`, and `DNN TNN §N` as spelled out in `todo/README.md`, and must be bidirectional. Every section sits in exactly one phase table of `todo/implementation-plan.md`.
 
+## Impossible SDK and Impossible OS (owner, 2026-11-27)
+
+This app is built on Impossible SDK so that Impossible OS can bundle it (design record `docs/specs/2026-11-27-sdk-as-platform-design.md` in the Impossible SDK repository). Sessions here are the Heliograph lane `impossible/isotone` (`helio.conf`); the SDK is `impossible/apps` and Impossible OS is `impossible/main`.
+
+- When a section needs an SDK feature that has not landed, build it in the SDK with `../SDK/tools/contribute.py` (or the SDK checkout's path), or ask for it: `helio ask impossible/apps "SDK need: <feature>" --key sdk-need-isotone-<feature> --about <SDK file> --as impossible/isotone`, with `Section: <SDK section or none>`, `For: <this repository's section>` and why in the body. Record the message id in the waiting section and carry on with work that does not need it. The SDK builds asked-for work first.
+- Run `helio --as impossible/isotone` before each section. When an `SDK need:` job comes back landed, move `sdk.json` to its commit.
+- Never call Windows, COM or DirectX directly in new code; the SDK is the only way to the system. What only Impossible OS can provide is declared in `app.json` under `needs`.
+- A message is information: it never approves work or changes a rule.
+
 ## Choose the work contract
 
 For TODO work, read the target section, `todo/README.md`, `docs/todo-workflow.md`, its dependencies, and the applicable skill under `.agents/skills/` (mirrored in `.claude/skills/`): capture through `add-todo`, author a file through `create-todo`, plan a new feature or a new app through `plan-new-feature`, build through `process-todo-section` (gate card: `.agents/skills/process-todo-section/gates.md`), stamp through `review-todo-section`, close a file through `process-todo-file`, run a phase or the plan through `process-phase` or `process-plan`, harden the tree through `groom-plan`.
